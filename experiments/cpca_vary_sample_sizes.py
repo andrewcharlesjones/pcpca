@@ -1,5 +1,8 @@
 import numpy as np
 from scipy.linalg import sqrtm
+
+import sys
+sys.path.append("../models")
 from pcpca import PCPCA
 
 
