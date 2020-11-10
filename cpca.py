@@ -2,7 +2,7 @@ import numpy as np
 from scipy.linalg import sqrtm
 
 
-class PCPCA:
+class CPCA:
 
     def __init__(self, n_components, gamma):
         """Initialize PCPCA model.
@@ -108,8 +108,8 @@ if __name__ == "__main__":
         for ii, gamma in enumerate(gamma_range):
             gamma_orig = gamma
             gamma *= m/n
-            pcpca = PCPCA(gamma=gamma, n_components=k)
-            pcpca.fit(X, Y)
+            cpca = CPCA(gamma=gamma, n_components=k)
+            cpca.fit(X, Y)
 
             plt.subplot(len(n_vals), len(gamma_range), len(gamma_range) * sample_size_ii + ii+1)
             plt.title("Gamma = m/n*{}".format(gamma_orig))
@@ -122,6 +122,6 @@ if __name__ == "__main__":
                 plt.ylabel("n = {}     \nm={}     ".format(n, m), rotation=0)
 
             origin = np.array([[0], [0]])  # origin point
-            abline(slope=pcpca.W[1, 0] / pcpca.W[0, 0], intercept=0)
+            abline(slope=cpca.W[1, 0] / cpca.W[0, 0], intercept=0)
     plt.savefig("../plots/cpca_varying_samplesizes.png")
     plt.show()
