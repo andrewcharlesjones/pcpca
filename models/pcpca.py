@@ -26,6 +26,10 @@ class PCPCA:
 
         # Eigendecomposition
         eigvals, U = np.linalg.eig(Cdiff)
+        eigvals, U = np.real(eigvals), np.real(U)
+        # U, D, VT = np.linalg.svd(Cdiff)
+        # eigvals = D**2
+        # import ipdb; ipdb.set_trace()
 
         # Sort by eigenvalues and truncate to number of components
         sorted_idx = np.argsort(-eigvals)
@@ -40,7 +44,10 @@ class PCPCA:
 
         # MLE for W
         Lambda_scaled = Lambda / (n - self.gamma * m)
+
         W_mle = U @ sqrtm(Lambda_scaled - sigma2_mle * np.eye(self.k))
+        # import ipdb; ipdb.set_trace()
+
 
         self.sigma2_mle = sigma2_mle
         self.W_mle = W_mle
@@ -48,7 +55,7 @@ class PCPCA:
     def transform(self, X, Y):
         """Embed data using fitted model.
         """
-        return pcpca.W_mle.T @ X, pcpca.W_mle.T @ Y
+        return self.W_mle.T @ X, self.W_mle.T @ Y
 
     def fit_transform(self, X, Y):
         self.fit(X, Y)

@@ -41,7 +41,7 @@ class CPCA:
     def transform(self, X, Y):
         """Embed data using fitted model.
         """
-        return pcpca.W.T @ X, pcpca.W.T @ Y
+        return self.W.T @ X, self.W.T @ Y
 
     def fit_transform(self, X, Y):
         self.fit(X, Y)
