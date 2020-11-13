@@ -27,9 +27,6 @@ class PCPCA:
         # Eigendecomposition
         eigvals, U = np.linalg.eig(Cdiff)
         eigvals, U = np.real(eigvals), np.real(U)
-        # U, D, VT = np.linalg.svd(Cdiff)
-        # eigvals = D**2
-        # import ipdb; ipdb.set_trace()
 
         # Sort by eigenvalues and truncate to number of components
         sorted_idx = np.argsort(-eigvals)
@@ -46,7 +43,6 @@ class PCPCA:
         Lambda_scaled = Lambda / (n - self.gamma * m)
 
         W_mle = U @ sqrtm(Lambda_scaled - sigma2_mle * np.eye(self.k))
-        # import ipdb; ipdb.set_trace()
 
 
         self.sigma2_mle = sigma2_mle
