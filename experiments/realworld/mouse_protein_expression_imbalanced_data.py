@@ -62,16 +62,16 @@ if __name__ == "__main__":
 	font = {'size'   : 15}
 	matplotlib.rc('font', **font)
 
-	gamma_range = [0, 0.2, 0.5, 0.9]
+	gamma = 0.1
 	# gamma_range = [0, 0.1, 0.2, 0.3]
 	# gamma_range = np.linspace(0, n/m-1e-2, 4)
-	plt.figure(figsize=(len(gamma_range) * 7, 18))
+	plt.figure(figsize=(len(subset_size_range) * 7, 17))
 
 	subset_size_range = [20, 100, 200, X.shape[1]]
 	for ii, subset_size in enumerate(subset_size_range):
 
 		# gamma = n/m*0.5
-		gamma = 0.1
+		
 
 		Y_df = data[(data.Behavior == "C/S") & (data.Genotype == "Control") & (data.Treatment == "Saline")]
 

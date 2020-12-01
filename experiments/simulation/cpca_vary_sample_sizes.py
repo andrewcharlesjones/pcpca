@@ -2,8 +2,9 @@ import numpy as np
 from scipy.linalg import sqrtm
 
 import sys
-sys.path.append("../models")
+sys.path.append("../../models")
 from cpca import CPCA
+from pcpca import PCPCA
 
 
 
@@ -35,15 +36,18 @@ if __name__ == "__main__":
 
     # Vary gamma and plot what happens
     # We expect that gamma equal to 0 recovers PCA on X
-    n_vals = [200, 200, 20]
-    m_vals = [200, 20, 200]
+    n = 100
+    m_vals = [10, 100, 200, 1000]
 
     k = 1
-    gamma_range = [0, 0.2, 0.5, 0.9, 0.99]
-    plt.figure(figsize=(len(gamma_range) * 7, 15))
-    for sample_size_ii in range(len(n_vals)):
+    gamma = 0.9
+    plt.figure(figsize=(len(m_vals) * 7, 12))
+    plt.suptitle("Gamma={}".format(gamma))
+    for ii in range(len(m_vals)):
 
-        n, m = n_vals[sample_size_ii], m_vals[sample_size_ii]
+        print(ii)
+
+        m = m_vals[ii]
 
         # Generate data
         Y = multivariate_normal.rvs([0, 0], cov, size=m)
@@ -53,23 +57,57 @@ if __name__ == "__main__":
 
         X, Y = X.T, Y.T
 
-        for ii, gamma in enumerate(gamma_range):
-            gamma_orig = gamma
-            gamma *= m/n
-            cpca = CPCA(gamma=gamma, n_components=k)
-            cpca.fit(X, Y)
 
-            plt.subplot(len(n_vals), len(gamma_range), len(gamma_range) * sample_size_ii + ii+1)
-            plt.title("Gamma = m/n*{}".format(gamma_orig))
-            plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)")
-            plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")
-            plt.legend()
-            plt.xlim([-7, 7])
-            plt.ylim([-7, 7])
-            if ii == 0:
-                plt.ylabel("n = {}     \nm={}     ".format(n, m), rotation=0)
 
-            origin = np.array([[0], [0]])  # origin point
-            abline(slope=cpca.W[1, 0] / cpca.W[0, 0], intercept=0)
-    plt.savefig("../plots/cpca_varying_samplesizes.png")
+        #### CPCA
+        cpca = CPCA(gamma=gamma, n_components=k)
+        cpca.fit(X, Y)
+
+        plt.subplot(2, len(m_vals), ii+1)
+        plt.title("m={}".format(m))
+        plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)")
+        plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")
+        plt.legend()
+        plt.xlim([-7, 7])
+        plt.ylim([-7, 7])
+
+        origin = np.array([[0], [0]])  # origin point
+        abline(slope=cpca.W[1, 0] / cpca.W[0, 0], intercept=0)
+
+        if ii == 0:
+            plt.ylabel("CPCA        ", rotation=0)
+
+        import ipdb; ipdb.set_trace()
+
+
+
+
+        #### PCPCA
+        pcpca = PCPCA(gamma=n/m*gamma, n_components=k)
+        pcpca.fit(X, Y)
+
+        plt.subplot(2, len(m_vals), len(m_vals)+ii+1)
+        plt.title("m={}".format(m))
+        plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)")
+        plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")
+        plt.legend()
+        plt.xlim([-7, 7])
+        plt.ylim([-7, 7])
+
+        origin = np.array([[0], [0]])  # origin point
+        abline(slope=pcpca.W_mle[1, 0] / pcpca.W_mle[0, 0], intercept=0)
+
+        if ii == 0:
+            plt.ylabel("PCPCA        ", rotation=0)
+
+        # import ipdb; ipdb.set_trace()
+
+
+
+
+    plt.savefig("../../plots/cpca_varying_samplesizes.png")
     plt.show()
+
+
+
+

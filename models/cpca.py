@@ -26,6 +26,20 @@ class CPCA:
         # Eigendecomposition
         eigvals, U = np.linalg.eig(Cdiff)
 
+        # import matplotlib.pyplot as plt
+        # for g in [1, 10, 100, 200, 300, 350, 375, 376, 390, 400]:
+
+        # # import ipdb; ipdb.set_trace()
+        #     Cdiff = Cx - g * Cy
+        #     eigvals, U = np.linalg.eig(Cdiff)
+        #     # plt.plot(-np.sort(-eigvals)[:5], label=g)
+        #     # print(-np.sort(-eigvals)[:5])
+        #     # print(-np.sort(-eigvals)[0] / -np.sort(-eigvals)[1])
+        #     print("\n", U[:, :2])
+
+        # plt.legend()
+        # plt.show()
+        # import sys; sys.exit()
         # Sort by eigenvalues and truncate to number of components
         sorted_idx = np.argsort(-eigvals)
         eigvals = eigvals[sorted_idx]
@@ -35,6 +49,8 @@ class CPCA:
 
         
         W = U @ sqrtm(Lambda)
+        # print(np.linalg.norm(W, axis=0))
+        # import ipdb; ipdb.set_trace()
 
         self.W = W
 
@@ -51,6 +67,18 @@ class CPCA:
         """Sample from the fitted model.
         """
         pass
+
+    def get_gamma_bound(self, X, Y):
+        """Compute the upper bound on gamma such that the d'th eigenvalue of C is positive.
+        """
+        Cx = self._compute_sample_covariance(X)
+        Cy = self._compute_sample_covariance(Y)
+        Cx_eigvals = -np.sort(-np.linalg.eigvals(Cx))
+        Cy_eigvals = -np.sort(-np.linalg.eigvals(Cy))
+
+        gamma_bound = Cx_eigvals[self.k - 1] / Cy_eigvals[0]
+        return gamma_bound
+
 
     def _compute_sample_covariance(self, data):
         """Compute sample covariance where data is a p x n matrix.
