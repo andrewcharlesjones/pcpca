@@ -6,5 +6,5 @@ Given a $p \times n$ matrix $X$ of foreground samples and a $p \times m$ matrix 
 
 ```python
 pcpca = PCPCA(pcpca = PCPCA(gamma=0.7, n_components=2)
-pcpca.fit(X, Y))
+pcpca.fit(X, Y)
 ```
