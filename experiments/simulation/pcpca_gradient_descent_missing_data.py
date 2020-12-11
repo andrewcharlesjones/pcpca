@@ -13,6 +13,11 @@ sys.path.append("../../models")
 from pcpca import PCPCA
 from cpca import CPCA
 
+import matplotlib
+font = {'size'   : 20}
+matplotlib.rc('font', **font)
+matplotlib.rcParams['text.usetex'] = True
+
 inv = np.linalg.inv
 
 n, m = 100, 100
@@ -21,7 +26,7 @@ k = 2
 ky = 2
 zx = np.random.normal(0, 1, size=(k, n))
 zy = np.random.normal(0, 1, size=(ky, m))
-W_true = np.random.normal(0, 10, size=(p, k))
+W_true = np.random.normal(0, 1, size=(p, k))
 S_true = np.random.normal(0, 1, size=(p, ky))
 sigma2_true = 1
 
@@ -37,8 +42,8 @@ Y_test = S_true @ zy_test + np.random.normal(0, np.sqrt(sigma2_true), size=(p, m
 Cx_eigvals = -np.sort(-np.linalg.eigvals(np.cov(X_full)))
 Cy_eigvals = -np.sort(-np.linalg.eigvals(np.cov(Y_full)))
 
-# gamma_bound = np.sum(Cx_eigvals[k:]) / ((p - k) * Cy_eigvals[0])
-# print("Upper bound on gamma: {}".format(round(gamma_bound, 3)))
+gamma_bound = np.sum(Cx_eigvals[k:]) / ((p - k) * Cy_eigvals[0])
+print("Upper bound on gamma: {}".format(round(gamma_bound, 3)))
 
 def abline(slope, intercept):
     """Plot a line from slope and intercept"""
@@ -78,10 +83,22 @@ def log_likelihood_fg(X, W, sigma2, gamma):
 
 	return LL
 
+# sigma2_range = np.linspace(1e-3, 10, 100)
+# ll_list = []
+# W = np.random.normal(size=(p, k))
+# pcpca = PCPCA()
+# for curr_sigma2 in sigma2_range:
+#     curr_ll = pcpca._log_likelihood(X_full, W, curr_sigma2)
+#     ll_list.append(curr_ll)
+# import matplotlib.pyplot as plt
+# plt.plot(sigma2_range, ll_list)
+# plt.show()
+# import ipdb; ipdb.set_trace()
 
-gamma = 0.2
-missing_p_range = [0, 0.2, 0.5]
-n_repeats = 1
+
+gamma = 0.05
+missing_p_range = np.arange(0, 0.8, 0.1)
+n_repeats = 5
 W_errors = np.empty((n_repeats, len(missing_p_range)))
 
 for repeat_ii in range(n_repeats):
@@ -107,15 +124,23 @@ for repeat_ii in range(n_repeats):
 		print("-" * 80)
 		print("Test LL : {}".format(round(ll_test, 3)))
 		print("-" * 80)
-		print("\n\n")
+		
+		# plt.scatter(W.squeeze(), W_true.squeeze())
+		# plt.show()
 
-		# W_cov_true = np.cov(W_true) # W_true @ W_true.T #
-		# W_cov_estimated = np.cov(W) # W @ W.T #
-		# W_error = pearsonr(W_cov_true.flatten(), W_cov_estimated.flatten())[0] # np.mean((W_cov_true - W_cov_estimated)**2)
-		# print("-" * 80)
-		# print("W error : {}".format(round(W_error, 3)))
-		# print("-" * 80)
+		W = (W - np.mean(W, axis=0)) / np.std(W, axis=0)
+		W_true = (W_true - np.mean(W_true, axis=0)) / np.std(W_true, axis=0)
+		W_cov_true = np.cov(W_true) # W_true @ W_true.T #
+		W_cov_estimated = np.cov(W) # W @ W.T #
+		W_error = np.mean((W_cov_true - W_cov_estimated)**2) # pearsonr(W_cov_true.flatten(), W_cov_estimated.flatten())[0]
+		# W_error = np.mean((W_cov_true / np.max(W_cov_true) - W_cov_estimated / np.max(W_cov_estimated))**2)
+		print("-" * 80)
+		print("W error : {}".format(round(W_error, 3)))
+		print("-" * 80)
 		# W_errors[repeat_ii, ii] = W_error
+
+		# print(sigma2)
+		print("\n\n")
 
 		# Normalize
 		# import ipdb; ipdb.set_trace()
@@ -131,6 +156,8 @@ for repeat_ii in range(n_repeats):
 		# print("-" * 80)
 		# W_errors[repeat_ii, ii] = W_error
 
+# plt.errorbar(missing_p_range, np.mean(W_errors, axis=0), yerr=np.std(W_errors, axis=0), fmt='-o', label="PCPCA")
+# plt.show()
 
 gamma = 0.0
 W_errors_ppca = np.empty((n_repeats, len(missing_p_range)))
@@ -164,12 +191,14 @@ plt.figure(figsize=(7, 5))
 plt.errorbar(missing_p_range, np.mean(W_errors, axis=0), yerr=np.std(W_errors, axis=0), fmt='-o', label="PCPCA")
 plt.errorbar(missing_p_range, np.mean(W_errors_ppca, axis=0), yerr=np.std(W_errors, axis=0), fmt='-o', label="PPCA")
 plt.legend()
-plt.xlabel("Fraction missing")
+# plt.xlabel("Fraction missing")
+# plt.xlabel(r'\text{Fraction missing}')
+plt.xlabel(r'Fraction missing')
 # plt.ylabel("MSE")
 plt.ylabel("Foreground log-likelihod (test)")
-plt.title("PCPCA gradient descent")
+plt.title("PCPCA, missing data")
 plt.tight_layout()
-plt.savefig("../../plots/pcpca_missing_data.png")
+plt.savefig("../../plots/simulated/pcpca_missing_data.png")
 plt.show()
 
 import ipdb; ipdb.set_trace()

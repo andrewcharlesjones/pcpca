@@ -5,7 +5,7 @@ from scipy.stats import multivariate_normal
 
 class PCPCA:
 
-    def __init__(self, n_components, gamma):
+    def __init__(self, n_components=2, gamma=0.5):
         """Initialize PCPCA model.
         """
         self.k = n_components
@@ -40,7 +40,6 @@ class PCPCA:
 
         # MLE for W
         Lambda_scaled = Lambda / (n - self.gamma * m)
-
 
         W_mle = U @ sqrtm(Lambda_scaled - sigma2_mle * np.eye(self.k))
 
@@ -80,7 +79,8 @@ class PCPCA:
         Cx_eigvals = -np.sort(-np.linalg.eigvals(Cx))
         Cy_eigvals = -np.sort(-np.linalg.eigvals(Cy))
 
-        gamma_bound = np.sum(Cx_eigvals[self.k-1:]) / ((p - self.k) * Cy_eigvals[0])
+        gamma_bound = np.sum(Cx_eigvals[self.k-1:]) / \
+            ((p - self.k) * Cy_eigvals[0])
         return gamma_bound
 
     def _compute_sample_covariance(self, data):
@@ -144,7 +144,6 @@ class PCPCA:
 
             W_grad = -(running_sum_W_X - gamma * running_sum_W_Y) @ W
             sigma2_grad = -0.5 * running_sum_sigma2_X + gamma/2.0 * running_sum_sigma2_Y
-            
 
             return W_grad, sigma2_grad
 
@@ -179,43 +178,89 @@ class PCPCA:
                 curr_summand = Ei * np.log(2 * np.pi) + slogdet(B)[1] + np.trace(B_inv @ np.outer(y, y))
                 running_sum_Y += curr_summand
 
-
             LL = -0.5 * running_sum_X + gamma/2.0 * running_sum_Y
 
             return LL
 
+        X_col_means = np.nanmean(X.T, axis=0)
+        Y_col_means = np.nanmean(Y.T, axis=0)
 
-        # Initialize parameters
-        # Cx, Cy = np.cov(X), np.cov(Y)
-        # Cx = np.array(np.ma.cov(np.ma.masked_invalid(X)))
-        # Cy = np.array(np.ma.cov(np.ma.masked_invalid(Y)))
-        # eigvals, eigvecs = np.linalg.eig(Cx - self.gamma * Cy)
-        # sorted_idx = np.argsort(-eigvals)
-        # W = eigvecs[:, sorted_idx[:self.k]]
+        # Find indices that you need to replace
+        inds_X = np.where(np.isnan(X.T))
+        inds_Y = np.where(np.isnan(Y.T))
 
-        W = np.random.normal(size=(X.shape[0], self.k))
+        # Place column means in the indices. Align the arrays using take
+        X_copy, Y_copy = X.copy(), Y.copy()
+        X_copy, Y_copy = X_copy.T, Y_copy.T
+        X_copy[inds_X] = np.take(X_col_means, inds_X[1])
+        Y_copy[inds_Y] = np.take(Y_col_means, inds_Y[1])
+        X_copy -= X_copy.mean(0)
+        Y_copy -= Y_copy.mean(0)
+        X_copy, Y_copy = X_copy.T, Y_copy.T
 
-        sigma2 = 1.0
+        pcpca_init = PCPCA(gamma=self.gamma, n_components=self.k)
+        pcpca_init.fit(X_copy, Y_copy)
+        W, sigma2 = pcpca_init.W_mle, 2  # pcpca_init.sigma2_mle
 
-        # Start GD
-        lr_W = 1e-3
-        lr_sigma2 = 1e-5
+        # Adam
+        alpha = 0.01
+        beta_1 = 0.9
+        beta_2 = 0.999  # initialize the values of the parameters
+        epsilon = 1e-8
+        m_t = 0
+        v_t = 0
+        m_t_sigma2 = 0
+        v_t_sigma2 = 0
+        t = 0
+        # W = np.random.normal(size=(X.shape[0], self.k))
+        # sigma2 = 3.0
+
         ll_trace = []
-        for iter_num in range(n_iter):
-            W_grad, sigma2_grad = grads(X, Y, W, sigma2, self.gamma)
-            W += lr_W * W_grad
-            # sigma2 += lr_sigma2 * sigma2_grad
-            # sigma2 = max(sigma2, 1e-3)
+        ll_last = 0
+        for iter_num in range(n_iter):  # till it gets converged
+            t += 1
+            # computes the gradient of the stochastic function
+            g_t_W, g_t_sigma2 = grads(X, Y, W, sigma2, self.gamma)
+
+            # W
+            # updates the moving averages of the gradient
+            m_t = beta_1*m_t + (1-beta_1)*g_t_W
+            # updates the moving averages of the squared gradient
+            v_t = beta_2*v_t + (1-beta_2)*(g_t_W*g_t_W)
+            # calculates the bias-corrected estimates
+            m_cap = m_t/(1-(beta_1**t))
+            # calculates the bias-corrected estimates
+            v_cap = v_t/(1-(beta_2**t))
+            W_prev = W
+            # updates the parameters
+            W = W + (alpha*m_cap)/(np.sqrt(v_cap)+epsilon)
+
+            # sigma2
+            # updates the moving averages of the gradient
+            m_t_sigma2 = beta_1*m_t_sigma2 + (1-beta_1)*g_t_sigma2
+            # updates the moving averages of the squared gradient
+            v_t_sigma2 = beta_2*v_t_sigma2 + (1-beta_2)*(g_t_sigma2*g_t_sigma2)
+            # calculates the bias-corrected estimates
+            m_cap = m_t_sigma2/(1-(beta_1**t))
+            # calculates the bias-corrected estimates
+            v_cap = v_t_sigma2/(1-(beta_2**t))
+            sigma2_prev = sigma2
+            # updates the parameters
+            sigma2 = sigma2 + (alpha*m_cap)/(np.sqrt(v_cap)+epsilon)
+
+            # Threshold
+            sigma2 = max(sigma2, 1e-4)
 
             if verbose and (iter_num % 20) == 0:
                 ll = log_likelihood(X, Y, W, sigma2, self.gamma)
-                print("Iter: {}, LL: {}".format(iter_num, round(ll, 3)))
+                if np.abs(ll - ll_last) < 0.1:
+                    break
+                ll_last = ll
+                print("Iter: {} \t LL: {}".format(iter_num, round(ll, 2)))
 
         return W, sigma2
 
     def _create_permuation_matrix(self, idx):
-        # Creates a permutation matrix
-        # (right-multiplying permutes columns, left-multiplying permutes rows)
 
         P = np.zeros((idx.shape[0], idx.shape[0]))
         for ii, curr_idx in enumerate(idx):
@@ -241,17 +286,18 @@ class PCPCA:
         Aou = Auo.T
         Auu = A[n_observed:, n_observed:]
 
-        ### Compute Mi/Mj
+        # Compute Mi/Mj
         Aoo_inv = np.linalg.inv(Aoo)
         Ai_lowerright = Auu - Auo @ Aoo_inv @ Aou
         Ai = np.block([
-            [np.zeros((n_observed, n_observed)),      np.zeros((n_observed, n_unobserved))],
+            [np.zeros((n_observed, n_observed)),
+             np.zeros((n_observed, n_unobserved))],
             [np.zeros((n_unobserved, n_observed)),    Ai_lowerright]])
 
-        ### Compute mui/muj
+        # Compute mui/muj
         mui = np.concatenate([xo, Auo @ Aoo_inv @ xo])
 
-        ### Compute expectation of outer product
+        # Compute expectation of outer product
         Exxi = Ai + np.outer(mui, mui)
 
         # Permute back to original indices
@@ -275,15 +321,14 @@ class PCPCA:
         Co = Exxis - self.gamma * Eyyjs
         return Co
 
-        
     def _log_likelihood(self, X, W, sigma2):
         p = X.shape[0]
         return np.sum(multivariate_normal.logpdf(X.T, mean=np.zeros(p), cov=W @ W.T + sigma2 * np.eye(p)))
 
-
     def fit_em_missing_data(self, X, Y, n_iter=50):
         """Fit model with EM in the presence of missing data.
         Missing values must be encoded as NA.
+        NOTE: THIS DOES NOT WORK CURRENTLY.
         """
         p, n, m = X.shape[0], X.shape[1], Y.shape[1]
         self.p = p
@@ -313,25 +358,25 @@ class PCPCA:
             tr1 = np.trace(Co)
             tr2 = np.trace(Wtilde.T @ Wtilde * ((n - self.gamma * m) * sigma2 * M_inv + M_inv @ Wtilde.T @ Co @ Wtilde @ M_inv))
             tr3 = np.trace(Wtilde @ M_inv @ Wtilde.T @ Co)
-            sigma2tilde = 1 / ((n - self.gamma * m) * self.p) * (tr1 + tr2 - 2*tr3)
+            sigma2tilde = 1 / ((n - self.gamma * m) *
+                               self.p) * (tr1 + tr2 - 2*tr3)
 
             # Reassign to W and sigma2
             W = Wtilde
             sigma2 = sigma2tilde
 
-            # print(W)
             try:
                 lhood = self._log_likelihood(X, W, sigma2)
             except:
-                import ipdb; ipdb.set_trace()
+                import ipdb
+                ipdb.set_trace()
             lhoods.append(lhood)
             print(lhood)
-            
-        #     print(sigma2)
+
         import matplotlib.pyplot as plt
         plt.plot(lhoods)
         plt.show()
-        # import ipdb; ipdb.set_trace()
+
         self.W_em = W
         self.sigma2_em = sigma2
 
@@ -346,8 +391,9 @@ class PCPCA:
 
         # Initialize W and sigma2
         W = np.random.normal(size=(p, self.k))
-        sigma2 = 0.5 # np.exp(np.random.normal())
-        Cx, Cy = self._compute_sample_covariance(X), self._compute_sample_covariance(Y)
+        sigma2 = 0.5  # np.exp(np.random.normal())
+        Cx, Cy = self._compute_sample_covariance(
+            X), self._compute_sample_covariance(Y)
         C = self.n * Cx - self.gamma * self.m * Cy
 
         lhoods = []
@@ -366,29 +412,29 @@ class PCPCA:
             tr1 = np.trace(C)
             tr2 = np.trace(Wtilde.T @ Wtilde @ ((n - self.gamma * m) * sigma2 * M_inv + M_inv @ Wtilde.T @ C @ Wtilde @ M_inv))
             tr3 = np.trace(Wtilde @ M_inv @ Wtilde.T @ C)
-            sigma2tilde = 1 / ((n - self.gamma * m) * self.p) * (tr1 + tr2 - 2*tr3)
-            # import ipdb; ipdb.set_trace()
+            sigma2tilde = 1 / ((n - self.gamma * m) *
+                               self.p) * (tr1 + tr2 - 2*tr3)
+
             if sigma2tilde <= 0:
-                import ipdb; ipdb.set_trace()
+                import ipdb
+                ipdb.set_trace()
 
             # Reassign to W and sigma2
             W = Wtilde
             sigma2 = sigma2tilde
             # sigma2 = max(sigma2, 0.01)
 
-            # print(W)
             try:
                 lhood = self._log_likelihood(X, W, sigma2)
             except:
-                import ipdb; ipdb.set_trace()
+                import ipdb
+                ipdb.set_trace()
             lhoods.append(lhood)
             print(lhood)
-            
-        #     print(sigma2)
+
         import matplotlib.pyplot as plt
         plt.plot(lhoods)
         plt.show()
-        # import ipdb; ipdb.set_trace()
         self.W_em = W
         self.sigma2_em = sigma2
 
@@ -404,7 +450,6 @@ if __name__ == "__main__":
         x_vals = np.array(axes.get_xlim())
         y_vals = intercept + slope * x_vals
         plt.plot(x_vals, y_vals, '--')
-    
 
     # Try this out with fake covariance matrices
     cov = [
@@ -414,12 +459,10 @@ if __name__ == "__main__":
 
     # Generate data
     n, m = 200, 200
-    
 
     miss_p_range = [0.01, 0.1, 0.5, 0.8]
     plt.figure(figsize=(len(miss_p_range) * 7, 5))
 
-    
     for ii, miss_p in enumerate(miss_p_range):
         Y = multivariate_normal.rvs([0, 0], cov, size=m)
         Xa = multivariate_normal.rvs([-1, 1], cov, size=n//2)
@@ -429,8 +472,8 @@ if __name__ == "__main__":
         Y -= Y.mean(0)
         X, Y = X.T, Y.T
 
-        # miss_p = 0.01
-        missing_mask = np.random.choice([0, 1], replace=True, size=(2, n), p=[1-miss_p, miss_p])
+        missing_mask = np.random.choice(
+            [0, 1], replace=True, size=(2, n), p=[1-miss_p, miss_p])
         X[missing_mask.astype(bool)] = np.nan
 
         gamma = 0.9
@@ -450,48 +493,5 @@ if __name__ == "__main__":
         origin = np.array([[0], [0]])  # origin point
         abline(slope=pcpca.W_em[1, 0] / pcpca.W_em[0, 0], intercept=0)
     plt.show()
-    import ipdb; ipdb.set_trace()
-
-    
-
-    # Try this out with fake covariance matrices
-    # cov = [
-    #     [2.7, 2.6],
-    #     [2.6, 2.7]
-    # ]
-
-    # # Generate data
-    # n, m = 200, 200
-    # Y = multivariate_normal.rvs([0, 0], cov, size=m)
-    # Xa = multivariate_normal.rvs([-1, 1], cov, size=n//2)
-    # Xb = multivariate_normal.rvs([1, -1], cov, size=n//2)
-    # X = np.concatenate([Xa, Xb], axis=0)
-
-    # X, Y = X.T, Y.T
-    
-
-    
-
-    # # Vary gamma and plot what happens
-    # # We expect that gamma equal to 0 recovers PCA on X
-    # gamma_range = [0, 0.2, 0.5, 0.9, 0.99]
-    # k = 1
-    # plt.figure(figsize=(len(gamma_range) * 7, 5))
-    # for ii, gamma in enumerate(gamma_range):
-    #     pcpca = PCPCA(gamma=gamma, n_components=k)
-
-    #     pcpca.fit(X, Y)
-        
-
-    #     plt.subplot(1, len(gamma_range), ii+1)
-    #     plt.title("Gamma = {}".format(gamma))
-    #     plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)")
-    #     plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")
-    #     plt.legend()
-    #     plt.xlim([-7, 7])
-    #     plt.ylim([-7, 7])
-
-    #     origin = np.array([[0], [0]])  # origin point
-    #     abline(slope=pcpca.W_mle[1, 0] / pcpca.W_mle[0, 0], intercept=0)
-    # plt.savefig("../plots/pcpca_vary_gamma.png")
-    # plt.show()
+    import ipdb
+    ipdb.set_trace()

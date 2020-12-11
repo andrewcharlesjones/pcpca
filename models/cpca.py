@@ -26,20 +26,6 @@ class CPCA:
         # Eigendecomposition
         eigvals, U = np.linalg.eig(Cdiff)
 
-        # import matplotlib.pyplot as plt
-        # for g in [1, 10, 100, 200, 300, 350, 375, 376, 390, 400]:
-
-        # # import ipdb; ipdb.set_trace()
-        #     Cdiff = Cx - g * Cy
-        #     eigvals, U = np.linalg.eig(Cdiff)
-        #     # plt.plot(-np.sort(-eigvals)[:5], label=g)
-        #     # print(-np.sort(-eigvals)[:5])
-        #     # print(-np.sort(-eigvals)[0] / -np.sort(-eigvals)[1])
-        #     print("\n", U[:, :2])
-
-        # plt.legend()
-        # plt.show()
-        # import sys; sys.exit()
         # Sort by eigenvalues and truncate to number of components
         sorted_idx = np.argsort(-eigvals)
         eigvals = eigvals[sorted_idx]
@@ -47,10 +33,7 @@ class CPCA:
         Lambda = np.diag(eigvals)
         Lambda, U = Lambda[:self.k, :self.k], U[:, :self.k]
 
-        
         W = U @ sqrtm(Lambda)
-        # print(np.linalg.norm(W, axis=0))
-        # import ipdb; ipdb.set_trace()
 
         self.W = W
 
@@ -79,7 +62,6 @@ class CPCA:
         gamma_bound = Cx_eigvals[self.k - 1] / Cy_eigvals[0]
         return gamma_bound
 
-
     def _compute_sample_covariance(self, data):
         """Compute sample covariance where data is a p x n matrix.
         """
@@ -94,7 +76,7 @@ if __name__ == "__main__":
     from scipy.stats import multivariate_normal
 
     import matplotlib
-    font = {'size'   : 15}
+    font = {'size': 15}
 
     matplotlib.rc('font', **font)
 
@@ -103,8 +85,6 @@ if __name__ == "__main__":
         [2.7, 2.6],
         [2.6, 2.7]
     ]
-
-    
 
     def abline(slope, intercept):
         """Plot a line from slope and intercept"""
@@ -139,7 +119,8 @@ if __name__ == "__main__":
             cpca = CPCA(gamma=gamma, n_components=k)
             cpca.fit(X, Y)
 
-            plt.subplot(len(n_vals), len(gamma_range), len(gamma_range) * sample_size_ii + ii+1)
+            plt.subplot(len(n_vals), len(gamma_range), len(
+                gamma_range) * sample_size_ii + ii+1)
             plt.title("Gamma = m/n*{}".format(gamma_orig))
             plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)")
             plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")

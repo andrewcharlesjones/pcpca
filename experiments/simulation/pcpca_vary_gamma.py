@@ -15,10 +15,10 @@ import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 
 
-font = {'size'   : 25}
-
 import matplotlib
+font = {'size'   : 30}
 matplotlib.rc('font', **font)
+matplotlib.rcParams['text.usetex'] = True
 
 # Try this out with fake covariance matrices
 
@@ -67,12 +67,15 @@ for ii, gamma in enumerate(gamma_range):
 
     plt.subplot(1, len(gamma_range), ii+1)
     if gamma == 0:
-        plt.title("Gamma = {} (PPCA)".format(gamma))
+        # plt.title("Gamma = {} (PPCA)".format(gamma))
+        plt.title(r'$\gamma^\prime$={}  (PPCA)'.format(gamma))
     else:
-        plt.title("Gamma = {}".format(gamma))
-    plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)", s=80)
+        # plt.title("Gamma = {}".format(gamma))
+        plt.title(r'$\gamma^\prime$={}'.format(gamma))
+    plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (foreground)", s=80)
     plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)", s=80)
-    plt.legend()
+    # plt.legend()
+    plt.legend(prop={'size': 20})
     plt.xlim([-7, 7])
     plt.ylim([-7, 7])
 
