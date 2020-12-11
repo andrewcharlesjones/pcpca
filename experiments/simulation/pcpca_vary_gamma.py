@@ -1,26 +1,21 @@
-import numpy as np
-from scipy.linalg import sqrtm
+import matplotlib
+from scipy.stats import multivariate_normal
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 import sys
 sys.path.append("../../models")
-from pcpca import PCPCA
 from cpca import CPCA
-
-from sklearn.decomposition import PCA
-
-
-
-
-import matplotlib.pyplot as plt
-from scipy.stats import multivariate_normal
+from pcpca import PCPCA
+import numpy as np
+from scipy.linalg import sqrtm
 
 
-import matplotlib
-font = {'size'   : 30}
+
+
+font = {'size': 30}
 matplotlib.rc('font', **font)
 matplotlib.rcParams['text.usetex'] = True
-
-# Try this out with fake covariance matrices
 
 
 # Generate data
@@ -36,15 +31,8 @@ Xa = multivariate_normal.rvs([-1, 1], cov, size=n//2)
 Xb = multivariate_normal.rvs([1, -1], cov, size=n//2)
 X = np.concatenate([Xa, Xb], axis=0)
 
-
-# X = PCA(n_components=2).fit_transform(X)
-# Y = PCA(n_components=2).fit_transform(Y)
-
 X, Y = X.T, Y.T
 
-# tmp = X
-# X = Y
-# Y = tmp
 
 def abline(slope, intercept):
     """Plot a line from slope and intercept"""
@@ -53,35 +41,30 @@ def abline(slope, intercept):
     y_vals = intercept + slope * x_vals
     plt.plot(x_vals, y_vals, '--')
 
+
 # Vary gamma and plot what happens
 # We expect that gamma equal to 0 recovers PCA on X
-# gamma_range = [0, 0.2, 0.5, 0.9, 0.99]
 gamma_range = [0, 0.2, 0.6, 0.9]
 k = 1
 plt.figure(figsize=(len(gamma_range) * 7, 7))
 for ii, gamma in enumerate(gamma_range):
     pcpca = PCPCA(gamma=gamma, n_components=k)
     pcpca.fit(X, Y)
-    # cpca = CPCA(gamma=gamma, n_components=k)
-    # cpca.fit(X, Y)
 
     plt.subplot(1, len(gamma_range), ii+1)
     if gamma == 0:
-        # plt.title("Gamma = {} (PPCA)".format(gamma))
         plt.title(r'$\gamma^\prime$={}  (PPCA)'.format(gamma))
     else:
-        # plt.title("Gamma = {}".format(gamma))
         plt.title(r'$\gamma^\prime$={}'.format(gamma))
-    plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (foreground)", s=80)
-    plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)", s=80)
-    # plt.legend()
+    plt.scatter(X[0, :n//2], X[1, :n//2], alpha=0.5, label="Foreground group 1", s=80, color="green")
+    plt.scatter(X[0, n//2:], X[1, n//2:], alpha=0.5, label="Foreground group 2", s=80, color="orange")
+    plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Background", s=80, color="gray")
     plt.legend(prop={'size': 20})
     plt.xlim([-7, 7])
     plt.ylim([-7, 7])
 
     origin = np.array([[0], [0]])  # origin point
     abline(slope=pcpca.W_mle[1, 0] / pcpca.W_mle[0, 0], intercept=0)
-    # abline(slope=cpca.W[1, 0] / cpca.W[0, 0], intercept=0)
 
     print(pcpca.sigma2_mle)
 plt.tight_layout()

@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../../models")
 from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
@@ -7,9 +9,7 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import silhouette_score
-import sys
 from sklearn.decomposition import PCA
-sys.path.append("../../../models")
 
 
 DATA_PATH = "../../../data/mouse_protein_expression/clean/Data_Cortex_Nuclear.csv"
@@ -102,6 +102,7 @@ if __name__ == "__main__":
     plt.ylim([0, 1])
     plt.xlim([0, cpca_gamma_plot_list[-1] + 40])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
+    plt.axhline(np.max(rand_scores_cpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
     plt.subplot(142)
@@ -110,6 +111,7 @@ if __name__ == "__main__":
     plt.ylim([0, 1])
     plt.xlim([0, pcpca_gamma_plot_list[-1] + 0.1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
+    plt.axhline(np.max(rand_scores_pcpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
 

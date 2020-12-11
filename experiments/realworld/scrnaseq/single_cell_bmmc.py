@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../../models")
 from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
@@ -7,8 +9,7 @@ import seaborn as sns
 from os.path import join as pjoin
 from scipy.io import mmread
 from sklearn.decomposition import PCA
-import sys
-sys.path.append("../../../models")
+
 
 
 DATA_DIR = "../../../data/singlecell_bmmc"
@@ -77,10 +78,16 @@ if __name__ == "__main__":
             X_reduced.T[:, 2:4], columns=["PCPC1", "PCPC2"])
         X_reduced_df['condition'] = X_labels
 
+        # Y_reduced_df = pd.DataFrame(Y_reduced.T[:, 2:4], columns=["PCPC1", "PCPC2"])
+        # Y_reduced_df['condition'] = [
+        #     "Background" for _ in range(Y_reduced_df.shape[0])]
+
         plot_df = X_reduced_df[X_reduced_df.condition.isin(
             ["Pretransplant", "Posttransplant"])]
+
+        # plot_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
         sns.scatterplot(data=plot_df, x="PCPC1", y="PCPC2",
-                        hue="condition", alpha=0.1)
+                        hue="condition", alpha=0.5, palette=['green', 'orange'])
         plt.xlabel("PCPC3")
         plt.ylabel("PCPC4")
 

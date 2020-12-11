@@ -2,7 +2,13 @@
 .ipynb_checkpoints/
 __pycache__/
 .DS_Store
-data/
+# data/
 figures/
 experiments/realworld/*.py
 *.ipynb
+*.npy
+*.csv
+*.JPEG
+*.log
+*.tsv
+*.mtx

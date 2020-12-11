@@ -18,6 +18,12 @@ font = {'size'   : 20}
 matplotlib.rc('font', **font)
 matplotlib.rcParams['text.usetex'] = True
 
+def mean_confidence_interval(data, confidence=0.95):
+    n = data.shape[0]
+    m, se = np.mean(data, axis=0), stats.sem(data, axis=0)
+    width = se * stats.t.ppf((1 + confidence) / 2., n-1)
+    return width
+
 inv = np.linalg.inv
 
 n, m = 100, 100
@@ -83,23 +89,13 @@ def log_likelihood_fg(X, W, sigma2, gamma):
 
 	return LL
 
-# sigma2_range = np.linspace(1e-3, 10, 100)
-# ll_list = []
-# W = np.random.normal(size=(p, k))
-# pcpca = PCPCA()
-# for curr_sigma2 in sigma2_range:
-#     curr_ll = pcpca._log_likelihood(X_full, W, curr_sigma2)
-#     ll_list.append(curr_ll)
-# import matplotlib.pyplot as plt
-# plt.plot(sigma2_range, ll_list)
-# plt.show()
-# import ipdb; ipdb.set_trace()
 
 
 gamma = 0.05
-missing_p_range = np.arange(0, 0.8, 0.1)
+missing_p_range = np.arange(0.1, 0.8, 0.1)
 n_repeats = 5
 W_errors = np.empty((n_repeats, len(missing_p_range)))
+imputation_errors_pcpca = np.empty((n_repeats, len(missing_p_range)))
 
 for repeat_ii in range(n_repeats):
 	for ii, missing_p in enumerate(missing_p_range):
@@ -124,43 +120,27 @@ for repeat_ii in range(n_repeats):
 		print("-" * 80)
 		print("Test LL : {}".format(round(ll_test, 3)))
 		print("-" * 80)
-		
-		# plt.scatter(W.squeeze(), W_true.squeeze())
-		# plt.show()
 
 		W = (W - np.mean(W, axis=0)) / np.std(W, axis=0)
 		W_true = (W_true - np.mean(W_true, axis=0)) / np.std(W_true, axis=0)
 		W_cov_true = np.cov(W_true) # W_true @ W_true.T #
 		W_cov_estimated = np.cov(W) # W @ W.T #
-		W_error = np.mean((W_cov_true - W_cov_estimated)**2) # pearsonr(W_cov_true.flatten(), W_cov_estimated.flatten())[0]
-		# W_error = np.mean((W_cov_true / np.max(W_cov_true) - W_cov_estimated / np.max(W_cov_estimated))**2)
+		W_error = np.mean((W_cov_true - W_cov_estimated)**2)
+
 		print("-" * 80)
 		print("W error : {}".format(round(W_error, 3)))
 		print("-" * 80)
-		# W_errors[repeat_ii, ii] = W_error
 
-		# print(sigma2)
 		print("\n\n")
 
-		# Normalize
-		# import ipdb; ipdb.set_trace()
-		# W /= W.sum(0)
-		# W_true /= W_true.sum(0)
+		X_imputed = pcpca.impute_missing_data(X)
+		imputation_mse = np.mean((X_full[missing_mask_X] - X_imputed[missing_mask_X])**2)
+		imputation_errors_pcpca[repeat_ii, ii] = imputation_mse
 
-
-		# W_cov_true = np.cov(W_true) # W_true @ W_true.T #
-		# W_cov_estimated = np.cov(W) # W @ W.T #
-		# W_error = np.mean((W_cov_true - W_cov_estimated)**2)
-		# print("-" * 80)
-		# print("W error : {}".format(round(W_error, 3)))
-		# print("-" * 80)
-		# W_errors[repeat_ii, ii] = W_error
-
-# plt.errorbar(missing_p_range, np.mean(W_errors, axis=0), yerr=np.std(W_errors, axis=0), fmt='-o', label="PCPCA")
-# plt.show()
 
 gamma = 0.0
 W_errors_ppca = np.empty((n_repeats, len(missing_p_range)))
+imputation_errors_ppca = np.empty((n_repeats, len(missing_p_range)))
 
 for repeat_ii in range(n_repeats):
 	for ii, missing_p in enumerate(missing_p_range):
@@ -187,18 +167,33 @@ for repeat_ii in range(n_repeats):
 		print("-" * 80)
 		print("\n\n")
 
+
+		X_imputed = pcpca.impute_missing_data(X)
+		imputation_mse = np.mean((X_full[missing_mask_X] - X_imputed[missing_mask_X])**2)
+		imputation_errors_ppca[repeat_ii, ii] = imputation_mse
+
 plt.figure(figsize=(7, 5))
-plt.errorbar(missing_p_range, np.mean(W_errors, axis=0), yerr=np.std(W_errors, axis=0), fmt='-o', label="PCPCA")
-plt.errorbar(missing_p_range, np.mean(W_errors_ppca, axis=0), yerr=np.std(W_errors, axis=0), fmt='-o', label="PPCA")
+plt.errorbar(missing_p_range, np.mean(W_errors, axis=0), yerr=mean_confidence_interval(W_errors), fmt='-o', label="PCPCA")
+plt.errorbar(missing_p_range, np.mean(W_errors_ppca, axis=0), yerr=mean_confidence_interval(W_errors_ppca), fmt='-o', label="PPCA")
 plt.legend()
-# plt.xlabel("Fraction missing")
-# plt.xlabel(r'\text{Fraction missing}')
 plt.xlabel(r'Fraction missing')
-# plt.ylabel("MSE")
 plt.ylabel("Foreground log-likelihod (test)")
 plt.title("PCPCA, missing data")
 plt.tight_layout()
 plt.savefig("../../plots/simulated/pcpca_missing_data.png")
+plt.show()
+
+
+
+plt.figure(figsize=(7, 5))
+plt.errorbar(missing_p_range, np.mean(imputation_errors_pcpca, axis=0), yerr=mean_confidence_interval(imputation_errors_pcpca), fmt='-o', label="PCPCA")
+plt.errorbar(missing_p_range, np.mean(imputation_errors_ppca, axis=0), yerr=mean_confidence_interval(imputation_errors_ppca), fmt='-o', label="PPCA")
+plt.xlabel(r'Fraction missing')
+plt.ylabel("MSE")
+plt.title("Imputation")
+plt.legend()
+plt.tight_layout()
+plt.savefig("../../plots/simulated/pcpca_missing_data_imputation.png")
 plt.show()
 
 import ipdb; ipdb.set_trace()

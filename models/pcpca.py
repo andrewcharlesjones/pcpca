@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.linalg import sqrtm
 from scipy.stats import multivariate_normal
+inv = np.linalg.inv
+slogdet = np.linalg.slogdet
 
 
 class PCPCA:
@@ -90,26 +92,64 @@ class PCPCA:
         cov = 1 / n * data @ data.T
         return cov
 
-    def gradient_descent_missing_data(self, X, Y, n_iter=500, verbose=True):
-        inv = np.linalg.inv
-        slogdet = np.linalg.slogdet
+    # Indication matrix for observed values
+    def make_L(self, X):
+        p = X.shape[0]
+        unobserved_idx = np.where(np.isnan(X))[0]
+        observed_idx = np.setdiff1d(np.arange(p), unobserved_idx)
+        L = np.zeros((observed_idx.shape[0], p))
+        for ii, idx in enumerate(observed_idx):
+            L[ii, idx] = 1
+        return L
 
-        def make_L(X):
-            p = X.shape[0]
-            unobserved_idx = np.where(np.isnan(X))[0]
+    # Indication matrix for unobserved values
+    def make_P(self, X):
+        p = X.shape[0]
+        unobserved_idx = np.where(np.isnan(X))[0]
+        P = np.zeros((unobserved_idx.shape[0], p))
+        for ii, idx in enumerate(unobserved_idx):
+            P[ii, idx] = 1
+        return P
+
+    def impute_missing_data(self, X):
+        p, n = X.shape
+        W, sigma2 = self.W_mle, self.sigma2_mle
+
+        # Indication matrices for observed values
+        Ls = [self.make_L(X[:, ii]) for ii in range(n)]
+
+        # Indication matrices for unobserved values
+        Ps = [self.make_P(X[:, ii]) for ii in range(n)]
+
+        # Cov between observed features
+        As = [Ls[ii] @ (W @ W.T + sigma2 * np.eye(p)) @ Ls[ii].T for ii in range(n)]
+
+        # Cov between unobserved features
+        Cs = [Ps[ii] @ (W @ W.T + sigma2 * np.eye(p)) @ Ps[ii].T for ii in range(n)]
+
+        # Cov between unobserved/observed features
+        Fs = [Ps[ii] @ (W @ W.T + sigma2 * np.eye(p)) @ Ls[ii].T for ii in range(n)]
+
+        # Find conditional mean of unobserved values
+        X_imputed = X.copy()
+        for ii in range(n):
+            unobserved_idx = np.where(np.isnan(X[:, ii]))[0]
             observed_idx = np.setdiff1d(np.arange(p), unobserved_idx)
-            L = np.zeros((observed_idx.shape[0], p))
-            for ii, idx in enumerate(observed_idx):
-                L[ii, idx] = 1
-            return L
+            xhat_u_ii = Fs[ii] @ inv(As[ii]) @ X_imputed[:, ii][observed_idx]
+            X_imputed[unobserved_idx, ii] = xhat_u_ii
+
+        return X_imputed
+
+
+    def gradient_descent_missing_data(self, X, Y, n_iter=500, verbose=True):
 
         def grads(X, Y, W, sigma2, gamma):
             p, n = X.shape
             m = Y.shape[1]
 
             # Indication matrices
-            Ls = [make_L(X[:, ii]) for ii in range(n)]
-            Ms = [make_L(Y[:, ii]) for ii in range(m)]
+            Ls = [self.make_L(X[:, ii]) for ii in range(n)]
+            Ms = [self.make_L(Y[:, ii]) for ii in range(m)]
 
             As = [Ls[ii] @ (W @ W.T + sigma2 * np.eye(p)) @ Ls[ii].T for ii in range(n)]
             Bs = [Ms[ii] @ (W @ W.T + sigma2 * np.eye(p)) @ Ms[ii].T for ii in range(m)]
@@ -150,8 +190,8 @@ class PCPCA:
         def log_likelihood(X, Y, W, sigma2, gamma):
             p, n = X.shape
             m = Y.shape[1]
-            Ls = [make_L(X[:, ii]) for ii in range(n)]
-            Ms = [make_L(Y[:, ii]) for ii in range(m)]
+            Ls = [self.make_L(X[:, ii]) for ii in range(n)]
+            Ms = [self.make_L(Y[:, ii]) for ii in range(m)]
 
             As = [Ls[ii] @ (W @ W.T + sigma2 * np.eye(p)) @ Ls[ii].T for ii in range(n)]
             Bs = [Ms[ii] @ (W @ W.T + sigma2 * np.eye(p)) @ Ms[ii].T for ii in range(m)]
@@ -197,6 +237,8 @@ class PCPCA:
         X_copy -= X_copy.mean(0)
         Y_copy -= Y_copy.mean(0)
         X_copy, Y_copy = X_copy.T, Y_copy.T
+
+        # import ipdb; ipdb.set_trace()
 
         pcpca_init = PCPCA(gamma=self.gamma, n_components=self.k)
         pcpca_init.fit(X_copy, Y_copy)
@@ -258,6 +300,8 @@ class PCPCA:
                 ll_last = ll
                 print("Iter: {} \t LL: {}".format(iter_num, round(ll, 2)))
 
+        self.sigma2_mle = sigma2
+        self.W_mle = W
         return W, sigma2
 
     def _create_permuation_matrix(self, idx):

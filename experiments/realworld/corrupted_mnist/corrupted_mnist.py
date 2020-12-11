@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../../models")
 from pcpca import PCPCA
 import numpy as np
 import pandas as pd
@@ -7,8 +9,7 @@ from os.path import join as pjoin
 from scipy.stats import multivariate_normal
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from sklearn.metrics import silhouette_score
-import sys
-sys.path.append("../../../models")
+
 
 
 N_COMPONENTS = 2
@@ -57,7 +58,7 @@ if __name__ == "__main__":
 
     plt.subplot(141)
     sns.scatterplot(data=X_reduced_df, x="PPC1",
-                    y="PPC2", hue="Digit", alpha=0.8)
+                    y="PPC2", hue="Digit", alpha=0.8, palette=['green', 'orange'])
     plt.title("PPCA")
     ax = plt.gca()
     handles, labels = ax.get_legend_handles_labels()
@@ -101,7 +102,7 @@ if __name__ == "__main__":
 
     plt.subplot(143)
     sns.scatterplot(data=X_reduced_df, x="PCPC1",
-                    y="PCPC2", hue="Digit", alpha=0.8)
+                    y="PCPC2", hue="Digit", alpha=0.8, palette=['green', 'orange'])
     plt.title(r'PCPCA, $\gamma^\prime$={}'.format(GAMMA))
     ax = plt.gca()
     handles, labels = ax.get_legend_handles_labels()

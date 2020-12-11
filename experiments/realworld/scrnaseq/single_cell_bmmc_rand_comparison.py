@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../../models")
 from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
@@ -10,8 +12,7 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import silhouette_score
-import sys
-sys.path.append("../../../models")
+
 
 
 DATA_DIR = "../../../data/singlecell_bmmc"
@@ -121,6 +122,7 @@ if __name__ == "__main__":
     plt.title("CPCA")
     plt.ylim([0, 1])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
+    plt.axhline(np.max(rand_scores_cpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
 
@@ -129,56 +131,57 @@ if __name__ == "__main__":
     plt.title("PCPCA")
     plt.ylim([0, 1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
+    plt.axhline(np.max(rand_scores_pcpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
     plt.tight_layout()
     plt.savefig("../../../plots/scrnaseq/singlecell_silhouette_score.png")
     plt.show()
 
-    plt.subplot(223)
-    cpca = CPCA(gamma=cpca_gamma_plot_list[-1], n_components=N_COMPONENTS)
-    X_reduced, Y_reduced = cpca.fit_transform(X, Y)
-    X_reduced, Y_reduced = X_reduced[1:3, :], Y_reduced[1:3, :]
+    # plt.subplot(223)
+    # cpca = CPCA(gamma=cpca_gamma_plot_list[-1], n_components=N_COMPONENTS)
+    # X_reduced, Y_reduced = cpca.fit_transform(X, Y)
+    # X_reduced, Y_reduced = X_reduced[1:3, :], Y_reduced[1:3, :]
 
-    plt.title("CPCA, gamma={}".format(round(cpca_gamma_plot_list[-1], 2)))
-    X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-    X_reduced_df['condition'] = X_labels
+    # plt.title("CPCA, gamma={}".format(round(cpca_gamma_plot_list[-1], 2)))
+    # X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
+    # X_reduced_df['condition'] = X_labels
 
-    Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
-    Y_reduced_df['condition'] = [
-        "Background" for _ in range(Y_reduced_df.shape[0])]
+    # Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
+    # Y_reduced_df['condition'] = [
+    #     "Background" for _ in range(Y_reduced_df.shape[0])]
 
-    results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
-    results_df[["PCPC1", "PCPC2"]] = results_df[[
-        "PCPC1", "PCPC2"]] / results_df[["PCPC1", "PCPC2"]].std(0)
+    # results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
+    # results_df[["PCPC1", "PCPC2"]] = results_df[[
+    #     "PCPC1", "PCPC2"]] / results_df[["PCPC1", "PCPC2"]].std(0)
 
-    sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2", hue="condition", palette=[
-                    'green', 'orange', 'gray'], alpha=0.5)
-    plt.xlabel("CPC1")
-    plt.ylabel("CPC2")
+    # sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2", hue="condition", palette=[
+    #                 'green', 'orange', 'gray'], alpha=0.5)
+    # plt.xlabel("CPC1")
+    # plt.ylabel("CPC2")
 
-    plt.subplot(224)
-    pcpca = PCPCA(
-        gamma=n/m*pcpca_gamma_plot_list[-1], n_components=N_COMPONENTS)
-    X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
-    X_reduced, Y_reduced = X_reduced[2:4, :], Y_reduced[2:4, :]
+    # plt.subplot(224)
+    # pcpca = PCPCA(
+    #     gamma=n/m*pcpca_gamma_plot_list[-1], n_components=N_COMPONENTS)
+    # X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
+    # X_reduced, Y_reduced = X_reduced[2:4, :], Y_reduced[2:4, :]
 
-    plt.title(
-        "PCPCA, gamma*m/n={}".format(round(pcpca_gamma_plot_list[-1], 2)))
-    X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-    X_reduced_df['condition'] = X_labels
+    # plt.title(
+    #     "PCPCA, gamma*m/n={}".format(round(pcpca_gamma_plot_list[-1], 2)))
+    # X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
+    # X_reduced_df['condition'] = X_labels
 
-    Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
-    Y_reduced_df['condition'] = [
-        "Background" for _ in range(Y_reduced_df.shape[0])]
+    # Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
+    # Y_reduced_df['condition'] = [
+    #     "Background" for _ in range(Y_reduced_df.shape[0])]
 
-    results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
-    results_df[["PCPC1", "PCPC2"]] = results_df[[
-        "PCPC1", "PCPC2"]] / results_df[["PCPC1", "PCPC2"]].std(0)
+    # results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
+    # results_df[["PCPC1", "PCPC2"]] = results_df[[
+    #     "PCPC1", "PCPC2"]] / results_df[["PCPC1", "PCPC2"]].std(0)
 
-    sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2", hue="condition", palette=[
-                    'green', 'orange', 'gray'], alpha=0.5)
+    # sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2", hue="condition", palette=[
+    #                 'green', 'orange', 'gray'], alpha=0.5)
 
-    plt.show()
+    # plt.show()
     import ipdb
     ipdb.set_trace()

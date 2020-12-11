@@ -1,3 +1,5 @@
+import sys
+sys.path.append("../../../models")
 from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
@@ -6,13 +8,18 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, silhouette_score
-import sys
 from sklearn.decomposition import PCA
-sys.path.append("../../../models")
+from scipy import stats
 
 
 DATA_PATH = "../../../data/mouse_protein_expression/clean/Data_Cortex_Nuclear.csv"
 N_COMPONENTS = 2
+
+def mean_confidence_interval(data, confidence=0.95):
+    n = data.shape[0]
+    m, se = np.mean(data, axis=0), stats.sem(data, axis=0)
+    width = se * stats.t.ppf((1 + confidence) / 2., n-1)
+    return width
 
 
 if __name__ == "__main__":
@@ -128,10 +135,10 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(7, 5))
 
-    plt.errorbar(sigma2_range, np.mean(best_rand_scores_cpca, axis=0), yerr=np.std(
-        best_rand_scores_cpca, axis=0), fmt='-o', label="CPCA")
-    plt.errorbar(sigma2_range, np.mean(best_rand_scores_pcpca, axis=0), yerr=np.std(
-        best_rand_scores_pcpca, axis=0), fmt='-o', label="PCPCA")
+    plt.errorbar(sigma2_range, np.mean(best_rand_scores_pcpca, axis=0), yerr=mean_confidence_interval(
+        best_rand_scores_pcpca), fmt='-o', label="PCPCA")
+    plt.errorbar(sigma2_range, np.mean(best_rand_scores_cpca, axis=0), yerr=mean_confidence_interval(
+        best_rand_scores_cpca), fmt='-o', label="CPCA")
     plt.legend()
     plt.xlabel(r'$\sigma^2$')
     plt.ylabel("Silhouette score")

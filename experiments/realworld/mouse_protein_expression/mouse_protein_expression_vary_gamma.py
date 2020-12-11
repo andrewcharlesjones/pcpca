@@ -1,12 +1,12 @@
+import sys
+sys.path.append("../../../models")
 from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import sys
 from sklearn.decomposition import PCA
-sys.path.append("../../../models")
 
 
 DATA_PATH = "../../../data/mouse_protein_expression/clean/Data_Cortex_Nuclear.csv"
@@ -55,16 +55,17 @@ if __name__ == "__main__":
     import matplotlib
     font = {'size': 20}
     matplotlib.rc('font', **font)
+    matplotlib.rcParams['text.usetex'] = True
 
     gamma_range = [0, 0.5, 0.9]
-    plt.figure(figsize=(len(gamma_range) * 6, 5))
+    plt.figure(figsize=((len(gamma_range) + 1) * 6, 5))
 
     for ii, gamma in enumerate(gamma_range):
 
         pcpca = PCPCA(gamma=n/m*gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
 
-        plt.subplot(1, len(gamma_range), ii+1)
+        plt.subplot(1, len(gamma_range)+1, ii+1)
         if gamma == 0:
             plt.title(r'$\gamma^\prime$={} (PPCA)'.format(gamma))
         else:
@@ -89,6 +90,24 @@ if __name__ == "__main__":
         ax = plt.gca()
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles=handles[1:], labels=labels[1:])
+
+        if ii == len(gamma_range) - 1:
+
+            plt.subplot(1, len(gamma_range)+1, ii+2)
+
+            # X_reduced_df.Genotype = "Foreground"
+            results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
+
+            sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
+                        hue="Genotype", palette=['green', 'orange', 'gray'])
+            plt.xlabel("PCPC1")
+            plt.ylabel("PCPC2")
+            plt.title(r'$\gamma^\prime$={}'.format(gamma))
+
+            ax = plt.gca()
+            handles, labels = ax.get_legend_handles_labels()
+            ax.legend(handles=handles[1:], labels=labels[1:])
+
 
     plt.tight_layout()
     plt.savefig(
