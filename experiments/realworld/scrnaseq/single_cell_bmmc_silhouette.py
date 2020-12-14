@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     gamma_range_cpca = np.linspace(0, 5, 20)
 
-    rand_scores_cpca = []
+    cluster_scores_cpca = []
     cpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_cpca):
 
@@ -80,9 +80,9 @@ if __name__ == "__main__":
         cpca_gamma_plot_list.append(gamma)
 
         true_labels = pd.factorize(X_df.condition)[0]
-        rand_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-        print("gamma={}, rand score={}".format(gamma, rand_score))
-        rand_scores_cpca.append(rand_score)
+        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+        print("gamma={}, cluster score={}".format(gamma, cluster_score))
+        cluster_scores_cpca.append(cluster_score)
 
         X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
         X_reduced_df['condition'] = X_labels
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 
     gamma_range_pcpca = np.linspace(0, 1-1e-3, 20)
 
-    rand_scores_pcpca = []
+    cluster_scores_pcpca = []
     pcpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_pcpca):
 
@@ -106,9 +106,9 @@ if __name__ == "__main__":
         pcpca_gamma_plot_list.append(gamma)
 
         true_labels = pd.factorize(X_df.condition)[0]
-        rand_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-        print("gamma={}, rand score={}".format(gamma, rand_score))
-        rand_scores_pcpca.append(rand_score)
+        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+        print("gamma={}, cluster score={}".format(gamma, cluster_score))
+        cluster_scores_pcpca.append(cluster_score)
 
         X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
         X_reduced_df['condition'] = X_labels
@@ -118,20 +118,20 @@ if __name__ == "__main__":
     plt.figure(figsize=(14, 6))
 
     plt.subplot(121)
-    plt.plot(cpca_gamma_plot_list, rand_scores_cpca, '-o', linewidth=2)
+    plt.plot(cpca_gamma_plot_list, cluster_scores_cpca, '-o', linewidth=2)
     plt.title("CPCA")
     plt.ylim([0, 1])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
-    plt.axhline(np.max(rand_scores_cpca), color="red", linestyle="--")
+    plt.axhline(np.max(cluster_scores_cpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
 
     plt.subplot(122)
-    plt.plot(pcpca_gamma_plot_list, rand_scores_pcpca, '-o', linewidth=2)
+    plt.plot(pcpca_gamma_plot_list, cluster_scores_pcpca, '-o', linewidth=2)
     plt.title("PCPCA")
     plt.ylim([0, 1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
-    plt.axhline(np.max(rand_scores_pcpca), color="red", linestyle="--")
+    plt.axhline(np.max(cluster_scores_pcpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
     plt.tight_layout()

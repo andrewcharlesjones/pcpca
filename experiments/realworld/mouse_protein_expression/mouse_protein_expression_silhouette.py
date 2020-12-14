@@ -7,7 +7,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
-from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 
@@ -54,7 +53,7 @@ if __name__ == "__main__":
     gamma_range_cpca = list(np.linspace(0, 400, 40))
     gamma_range_pcpca = list(np.linspace(0, 0.99, 40))
 
-    rand_scores_cpca = []
+    cluster_scores_cpca = []
     cpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_cpca):
 
@@ -71,11 +70,11 @@ if __name__ == "__main__":
         cpca_gamma_plot_list.append(gamma)
 
         true_labels = pd.factorize(X_df.Genotype)[0]
-        rand_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-        print("gamma={}, rand score={}".format(gamma, rand_score))
-        rand_scores_cpca.append(rand_score)
+        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+        print("gamma={}, cluster score={}".format(gamma, cluster_score))
+        cluster_scores_cpca.append(cluster_score)
 
-    rand_scores_pcpca = []
+    cluster_scores_pcpca = []
     pcpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_pcpca):
         gamma = gamma
@@ -91,27 +90,27 @@ if __name__ == "__main__":
         pcpca_gamma_plot_list.append(gamma)
 
         true_labels = pd.factorize(X_df.Genotype)[0]
-        rand_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-        print("gamma'=*{}, rand score={}".format(gamma, rand_score))
-        rand_scores_pcpca.append(rand_score)
+        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+        print("gamma'=*{}, cluster score={}".format(gamma, cluster_score))
+        cluster_scores_pcpca.append(cluster_score)
 
     plt.figure(figsize=(28, 6))
     plt.subplot(141)
-    plt.plot(cpca_gamma_plot_list, rand_scores_cpca, '-o', linewidth=2)
+    plt.plot(cpca_gamma_plot_list, cluster_scores_cpca, '-o', linewidth=2)
     plt.title("CPCA")
     plt.ylim([0, 1])
     plt.xlim([0, cpca_gamma_plot_list[-1] + 40])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
-    plt.axhline(np.max(rand_scores_cpca), color="red", linestyle="--")
+    plt.axhline(np.max(cluster_scores_cpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
     plt.subplot(142)
-    plt.plot(pcpca_gamma_plot_list, rand_scores_pcpca, '-o', linewidth=2)
+    plt.plot(pcpca_gamma_plot_list, cluster_scores_pcpca, '-o', linewidth=2)
     plt.title("PCPCA")
     plt.ylim([0, 1])
     plt.xlim([0, pcpca_gamma_plot_list[-1] + 0.1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
-    plt.axhline(np.max(rand_scores_pcpca), color="red", linestyle="--")
+    plt.axhline(np.max(cluster_scores_pcpca), color="red", linestyle="--")
     plt.xlabel(r'$\gamma^\prime$')
     plt.ylabel("Silhouette score")
 
@@ -167,10 +166,10 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.savefig(
-        "../../../plots/mouse_protein_expression/rand_index_comparison.png")
+        "../../../plots/mouse_protein_expression/cluster_score_comparison.png")
 
-    print(np.max(rand_scores_cpca))
-    print(np.max(rand_scores_pcpca))
+    print(np.max(cluster_scores_cpca))
+    print(np.max(cluster_scores_pcpca))
     plt.show()
 
     import ipdb

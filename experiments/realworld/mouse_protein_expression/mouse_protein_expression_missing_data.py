@@ -119,8 +119,8 @@ for ii, missing_p in enumerate(missing_p_range):
     X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
 
     true_labels = pd.factorize(X_df.Genotype)[0]
-    rand_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-    print("gamma=n/m*{}, rand score={}".format(gamma, rand_score))
+    cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+    print("gamma=n/m*{}, cluster score={}".format(gamma, cluster_score))
 
     # Plot reduced foreground data
     X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
@@ -143,7 +143,7 @@ for ii, missing_p in enumerate(missing_p_range):
     plt.xlabel(r'PCPC1')
     plt.ylabel("PCPC2")
     plt.title("Fraction missing: {}\nSilhouette score: {}".format(
-        missing_p, round(rand_score, 2)))
+        missing_p, round(cluster_score, 2)))
 
 plt.tight_layout()
 plt.savefig("../../../plots/mouse_protein_expression/mouse_missing_data.png")

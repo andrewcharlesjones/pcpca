@@ -66,8 +66,8 @@ if __name__ == "__main__":
     best_gammas_cpca = []
     best_gammas_pcpca = []
 
-    best_rand_scores_cpca = np.empty((n_repeats, len(sigma2_range)))
-    best_rand_scores_pcpca = np.empty((n_repeats, len(sigma2_range)))
+    best_cluster_scores_cpca = np.empty((n_repeats, len(sigma2_range)))
+    best_cluster_scores_pcpca = np.empty((n_repeats, len(sigma2_range)))
 
     for repeat_ii in range(n_repeats):
         for sigma2_ii, sigma2 in enumerate(sigma2_range):
@@ -80,7 +80,7 @@ if __name__ == "__main__":
             curr_Y = Y + np.random.normal(loc=0,
                                           scale=np.sqrt(sigma2), size=(p, m))
 
-            rand_scores_cpca = []
+            cluster_scores_cpca = []
             cpca_gamma_plot_list = []
             for ii, gamma in enumerate(gamma_range_cpca):
 
@@ -96,17 +96,17 @@ if __name__ == "__main__":
                 cpca_gamma_plot_list.append(gamma)
 
                 true_labels = pd.factorize(X_df.Genotype)[0]
-                rand_score = silhouette_score(
+                cluster_score = silhouette_score(
                     X=X_reduced.T, labels=true_labels)
-                rand_scores_cpca.append(rand_score)
+                cluster_scores_cpca.append(cluster_score)
 
             best_gamma = np.array(gamma_range_cpca)[
-                np.argmax(np.array(rand_scores_cpca))]
+                np.argmax(np.array(cluster_scores_cpca))]
             best_gammas_cpca.append(best_gamma)
-            best_rand_scores_cpca[repeat_ii, sigma2_ii] = np.max(
-                np.array(rand_scores_cpca))
+            best_cluster_scores_cpca[repeat_ii, sigma2_ii] = np.max(
+                np.array(cluster_scores_cpca))
 
-            rand_scores_pcpca = []
+            cluster_scores_pcpca = []
             pcpca_gamma_plot_list = []
             for ii, gamma in enumerate(gamma_range_pcpca):
 
@@ -123,22 +123,22 @@ if __name__ == "__main__":
                 pcpca_gamma_plot_list.append(gamma)
 
                 true_labels = pd.factorize(X_df.Genotype)[0]
-                rand_score = silhouette_score(
+                cluster_score = silhouette_score(
                     X=X_reduced.T, labels=true_labels)
-                rand_scores_pcpca.append(rand_score)
+                cluster_scores_pcpca.append(cluster_score)
 
             best_gamma = np.array(gamma_range_pcpca)[
-                np.argmax(np.array(rand_scores_pcpca))]
+                np.argmax(np.array(cluster_scores_pcpca))]
             best_gammas_pcpca.append(best_gamma)
-            best_rand_scores_pcpca[repeat_ii, sigma2_ii] = np.max(
-                np.array(rand_scores_pcpca))
+            best_cluster_scores_pcpca[repeat_ii, sigma2_ii] = np.max(
+                np.array(cluster_scores_pcpca))
 
     plt.figure(figsize=(7, 5))
 
-    plt.errorbar(sigma2_range, np.mean(best_rand_scores_pcpca, axis=0), yerr=mean_confidence_interval(
-        best_rand_scores_pcpca), fmt='-o', label="PCPCA")
-    plt.errorbar(sigma2_range, np.mean(best_rand_scores_cpca, axis=0), yerr=mean_confidence_interval(
-        best_rand_scores_cpca), fmt='-o', label="CPCA")
+    plt.errorbar(sigma2_range, np.mean(best_cluster_scores_pcpca, axis=0), yerr=mean_confidence_interval(
+        best_cluster_scores_pcpca), fmt='-o', label="PCPCA")
+    plt.errorbar(sigma2_range, np.mean(best_cluster_scores_cpca, axis=0), yerr=mean_confidence_interval(
+        best_cluster_scores_cpca), fmt='-o', label="CPCA")
     plt.legend()
     plt.xlabel(r'$\sigma^2$')
     plt.ylabel("Silhouette score")
