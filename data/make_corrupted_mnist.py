@@ -6,6 +6,10 @@ from utils import resize_and_crop
 import os
 from tqdm import tqdm
 
+###############################################################################################
+# Code here is partially borrowed from Abubakar Abid: https://github.com/abidlabs/contrastive #
+###############################################################################################
+
 
 # Read MNIST
 (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
