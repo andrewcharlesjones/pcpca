@@ -12,3 +12,5 @@ experiments/realworld/*.py
 *.log
 *.tsv
 *.mtx
+*.xlsx
+data/mhealth/README.txt
