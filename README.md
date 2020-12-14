@@ -1,4 +1,4 @@
-# pcpca
+# Probabilistic contrastive principal component analysis
 
 This repo contains models and algorithms for probabilistic contrastive principal component analysis (PCPCA).
 
