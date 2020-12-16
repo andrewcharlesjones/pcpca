@@ -14,3 +14,4 @@ experiments/realworld/*.py
 *.mtx
 *.xlsx
 data/mhealth/README.txt
+!data/toy/
