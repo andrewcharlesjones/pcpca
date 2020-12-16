@@ -2,7 +2,7 @@
 
 This repo contains models and algorithms for probabilistic contrastive principal component analysis (PCPCA).
 
-The accompanying paper can be found here: XXX.
+The accompanying paper can be found here: https://arxiv.org/abs/2012.07977.
 
 ## Motivation
 
