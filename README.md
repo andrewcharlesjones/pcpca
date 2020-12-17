@@ -11,15 +11,50 @@ After cloning this repo, navigate to its directory, and run the following comman
 python setup.py install
 ```
 
+You should then be able to import the model as follows:
+```
+from pcpca import PCPCA
+```
+
 ## Motivation
 
 Given a foreground dataset X and a backround dataset Y, PCPCA is designed to find structure and variation that is enriched in the foreground relative to the background.
 
 ## Example
 
-Given a p by n matrix X of foreground samples and a p by m matrix Y of background samples, PCPCA can be fit as follows.
+Here's a simple example of fitting PCPCA with a toy dataset. In this data, the foreground contains two subgroups.
+
+Load the toy dataset and plot it:
+```python
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Load
+X = pd.read_csv("./data/toy/foreground.csv", header=None).values
+Y = pd.read_csv("./data/toy/background.csv", header=None).values
+
+# Should have same number of features
+assert X.shape[0] == Y.shape[0]
+
+p, n = X.shape
+m = Y.shape[1]
+
+# Plot
+plt.scatter(X[0, :n//2], X[1, :n//2], alpha=0.5, label="Foreground group 1", s=80, color="green")
+plt.scatter(X[0, n//2:], X[1, n//2:], alpha=0.5, label="Foreground group 2", s=80, color="orange")
+plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Background", s=80, color="gray")
+plt.legend()
+plt.xlim([-7, 7])
+plt.ylim([-7, 7])
+plt.show()
+```
+
+![toydata](./plots/simulated/toydata.png)
+
+Now we'll instantiate and fit the model with maximum likelihood estimation.
 
 ```python
+from pcpca import PCPCA
 pcpca = PCPCA(gamma=0.7, n_components=2)
 pcpca.fit(X, Y)
 ```
