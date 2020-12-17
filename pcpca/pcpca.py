@@ -48,23 +48,15 @@ class PCPCA:
         self.sigma2_mle = sigma2_mle
         self.W_mle = W_mle
 
-    def transform(self, X, Y, use_em=False):
+    def transform(self, X, Y):
         """Embed data using fitted model.
         """
-        if use_em:
-            t = self.W_em.T @ X, self.W_em.T @ Y
-        else:
-            t = self.W_mle.T @ X, self.W_mle.T @ Y
+        t = self.W_mle.T @ X, self.W_mle.T @ Y
         return t
 
-    def fit_transform(self, X, Y, use_em=False):
-        if use_em:
-            # self.fit_em_missing_data(X, Y)
-            self.fit_em(X, Y)
-            t = self.transform(X, Y, use_em=True)
-        else:
-            self.fit(X, Y)
-            t = self.transform(X, Y, use_em=False)
+    def fit_transform(self, X, Y):
+        self.fit(X, Y)
+        t = self.transform(X, Y)
         return t
 
     def sample(self):
