@@ -4,6 +4,13 @@ This repo contains models and algorithms for probabilistic contrastive principal
 
 The accompanying paper can be found here: https://arxiv.org/abs/2012.07977.
 
+## Installation
+
+After cloning this repo, navigate to its directory, and run the following command.
+```
+python setup.py install
+```
+
 ## Motivation
 
 Given a foreground dataset X and a backround dataset Y, PCPCA is designed to find structure and variation that is enriched in the foreground relative to the background.
