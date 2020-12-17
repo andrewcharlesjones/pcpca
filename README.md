@@ -22,7 +22,7 @@ Given a foreground dataset X and a backround dataset Y, PCPCA is designed to fin
 
 ## Example
 
-Here's a simple example of fitting PCPCA with a toy dataset. In this data, the foreground contains two subgroups.
+Here's a simple example of fitting PCPCA with a toy dataset. In this data, the foreground contains two subgroups. The first half of the foreground samples belong to group 1, and the second half belong to group 2.
 
 Load the toy dataset and plot it:
 ```python

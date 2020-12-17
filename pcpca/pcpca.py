@@ -496,46 +496,53 @@ if __name__ == "__main__":
         plt.plot(x_vals, y_vals, '--')
 
     # Try this out with fake covariance matrices
-    cov = [
+    # cov = [
+    #     [2.7, 2.6],
+    #     [2.6, 2.7]
+    # ]
+    covX = [
         [2.7, 2.6],
         [2.6, 2.7]
     ]
-
+    covY = [
+        [4.7, 0.2],
+        [4.6, 0.3]
+    ]
     # Generate data
     n, m = 200, 200
 
-    miss_p_range = [0.01, 0.1, 0.5, 0.8]
-    plt.figure(figsize=(len(miss_p_range) * 7, 5))
+    Y = multivariate_normal.rvs([0, 0], covY, size=m)
 
-    for ii, miss_p in enumerate(miss_p_range):
-        Y = multivariate_normal.rvs([0, 0], cov, size=m)
-        Xa = multivariate_normal.rvs([-1, 1], cov, size=n//2)
-        Xb = multivariate_normal.rvs([1, -1], cov, size=n//2)
-        X = np.concatenate([Xa, Xb], axis=0)
-        X -= X.mean(0)
-        Y -= Y.mean(0)
-        X, Y = X.T, Y.T
+    Xa = multivariate_normal.rvs([-1, 1], covX, size=n//2)
+    Xb = multivariate_normal.rvs([1, -1], covX, size=n//2)
+    X = np.concatenate([Xa, Xb], axis=0)
 
-        missing_mask = np.random.choice(
-            [0, 1], replace=True, size=(2, n), p=[1-miss_p, miss_p])
-        X[missing_mask.astype(bool)] = np.nan
+    X, Y = X.T, Y.T
 
-        gamma = 0.9
-        pcpca = PCPCA(gamma=gamma, n_components=1)
-        pcpca.fit_em_missing_data(X, Y)
+    gamma_range = [0, 0.2, 0.6,100]
+    k = 1
+    plt.figure(figsize=(len(gamma_range) * 7, 5))
+    for ii, gamma in enumerate(gamma_range):
+        pcpca = PCPCA(gamma=gamma, n_components=k)
+        pcpca.fit(X, Y)
 
-        Xo = X[:, np.sum(np.isnan(X), axis=0) == 0]
-
-        plt.subplot(1, len(miss_p_range), ii+1)
-        plt.title("gamma = {}\nfraction missing = {}".format(gamma, miss_p))
-        plt.scatter(Xo[0, :], Xo[1, :], alpha=0.5, label="X (target)")
-        plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")
+        plt.subplot(1, len(gamma_range), ii+1)
+        if gamma == 0:
+            plt.title(r'$\gamma^\prime$={}  (PPCA)'.format(gamma))
+        else:
+            plt.title(r'$\gamma^\prime$={}'.format(gamma))
+        plt.scatter(X[0, :n//2], X[1, :n//2], alpha=0.5, label="Foreground group 1", s=80, color="green")
+        plt.scatter(X[0, n//2:], X[1, n//2:], alpha=0.5, label="Foreground group 2", s=80, color="orange")
+        plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Background", s=80, color="gray")
         plt.legend()
         plt.xlim([-7, 7])
         plt.ylim([-7, 7])
 
         origin = np.array([[0], [0]])  # origin point
-        abline(slope=pcpca.W_em[1, 0] / pcpca.W_em[0, 0], intercept=0)
+        abline(slope=pcpca.W_mle[1, 0] / pcpca.W_mle[0, 0], intercept=0)
+
+        print(pcpca.sigma2_mle)
+    plt.tight_layout()
     plt.show()
     import ipdb
     ipdb.set_trace()
