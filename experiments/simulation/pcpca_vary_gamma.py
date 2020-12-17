@@ -1,16 +1,8 @@
 import matplotlib
 from scipy.stats import multivariate_normal
 import matplotlib.pyplot as plt
-from sklearn.decomposition import PCA
-
-import sys
-sys.path.append("../../models")
-from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
-from scipy.linalg import sqrtm
-
-
 
 
 font = {'size': 30}
@@ -56,9 +48,12 @@ for ii, gamma in enumerate(gamma_range):
         plt.title(r'$\gamma^\prime$={}  (PPCA)'.format(gamma))
     else:
         plt.title(r'$\gamma^\prime$={}'.format(gamma))
-    plt.scatter(X[0, :n//2], X[1, :n//2], alpha=0.5, label="Foreground group 1", s=80, color="green")
-    plt.scatter(X[0, n//2:], X[1, n//2:], alpha=0.5, label="Foreground group 2", s=80, color="orange")
-    plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Background", s=80, color="gray")
+    plt.scatter(X[0, :n//2], X[1, :n//2], alpha=0.5,
+                label="Foreground group 1", s=80, color="green")
+    plt.scatter(X[0, n//2:], X[1, n//2:], alpha=0.5,
+                label="Foreground group 2", s=80, color="orange")
+    plt.scatter(Y[0, :], Y[1, :], alpha=0.5,
+                label="Background", s=80, color="gray")
     plt.legend(prop={'size': 20})
     plt.xlim([-7, 7])
     plt.ylim([-7, 7])

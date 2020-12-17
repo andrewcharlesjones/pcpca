@@ -42,7 +42,6 @@ class PCPCA:
 
         # MLE for W
         Lambda_scaled = Lambda / (n - self.gamma * m)
-
         W_mle = U @ sqrtm(Lambda_scaled - sigma2_mle * np.eye(self.k))
 
         self.sigma2_mle = sigma2_mle
@@ -51,6 +50,7 @@ class PCPCA:
     def transform(self, X, Y):
         """Embed data using fitted model.
         """
+        
         t = self.W_mle.T @ X, self.W_mle.T @ Y
         return t
 
@@ -360,119 +360,6 @@ class PCPCA:
     def _log_likelihood(self, X, W, sigma2):
         p = X.shape[0]
         return np.sum(multivariate_normal.logpdf(X.T, mean=np.zeros(p), cov=W @ W.T + sigma2 * np.eye(p)))
-
-    def fit_em_missing_data(self, X, Y, n_iter=50):
-        """Fit model with EM in the presence of missing data.
-        Missing values must be encoded as NA.
-        NOTE: THIS DOES NOT WORK CURRENTLY.
-        """
-        p, n, m = X.shape[0], X.shape[1], Y.shape[1]
-        self.p = p
-        self.n = n
-        self.m = m
-
-        # Initialize W and sigma2
-        W = np.random.normal(size=(p, self.k))
-        sigma2 = np.exp(np.random.normal())
-
-        lhoods = []
-        for _ in range(n_iter):
-
-            # Compute M
-            A = W @ W.T + sigma2 * np.eye(p)
-            M = W.T @ W + sigma2 * np.eye(self.k)
-
-            # Compute expecatation of differential covariance
-            Co = self._compute_Co(X, Y, A)
-
-            # Update W
-            M_inv = np.linalg.inv(M)
-            inv_term = (self.n - self.gamma * m) * sigma2 * M_inv + M_inv @ W.T @ Co @ W @ M_inv
-            Wtilde = Co @ W @ M_inv @ np.linalg.inv(inv_term)
-
-            # Update sigma2
-            tr1 = np.trace(Co)
-            tr2 = np.trace(Wtilde.T @ Wtilde * ((n - self.gamma * m) * sigma2 * M_inv + M_inv @ Wtilde.T @ Co @ Wtilde @ M_inv))
-            tr3 = np.trace(Wtilde @ M_inv @ Wtilde.T @ Co)
-            sigma2tilde = 1 / ((n - self.gamma * m) *
-                               self.p) * (tr1 + tr2 - 2*tr3)
-
-            # Reassign to W and sigma2
-            W = Wtilde
-            sigma2 = sigma2tilde
-
-            try:
-                lhood = self._log_likelihood(X, W, sigma2)
-            except:
-                import ipdb
-                ipdb.set_trace()
-            lhoods.append(lhood)
-            print(lhood)
-
-        import matplotlib.pyplot as plt
-        plt.plot(lhoods)
-        plt.show()
-
-        self.W_em = W
-        self.sigma2_em = sigma2
-
-    def fit_em(self, X, Y, n_iter=50):
-        """Fit model with EM in the presence of missing data.
-        Missing values must be encoded as NA.
-        """
-        p, n, m = X.shape[0], X.shape[1], Y.shape[1]
-        self.p = p
-        self.n = n
-        self.m = m
-
-        # Initialize W and sigma2
-        W = np.random.normal(size=(p, self.k))
-        sigma2 = 0.5  # np.exp(np.random.normal())
-        Cx, Cy = self._compute_sample_covariance(
-            X), self._compute_sample_covariance(Y)
-        C = self.n * Cx - self.gamma * self.m * Cy
-
-        lhoods = []
-        for _ in range(n_iter):
-
-            # Compute M
-            # A = W @ W.T + sigma2 * np.eye(p)
-            M = W.T @ W + sigma2 * np.eye(self.k)
-
-            # Update W
-            M_inv = np.linalg.inv(M)
-            inv_term = (self.n - self.gamma * m) * sigma2 * M_inv + M_inv @ W.T @ C @ W @ M_inv
-            Wtilde = C @ W @ M_inv @ np.linalg.inv(inv_term)
-
-            # Update sigma2
-            tr1 = np.trace(C)
-            tr2 = np.trace(Wtilde.T @ Wtilde @ ((n - self.gamma * m) * sigma2 * M_inv + M_inv @ Wtilde.T @ C @ Wtilde @ M_inv))
-            tr3 = np.trace(Wtilde @ M_inv @ Wtilde.T @ C)
-            sigma2tilde = 1 / ((n - self.gamma * m) *
-                               self.p) * (tr1 + tr2 - 2*tr3)
-
-            if sigma2tilde <= 0:
-                import ipdb
-                ipdb.set_trace()
-
-            # Reassign to W and sigma2
-            W = Wtilde
-            sigma2 = sigma2tilde
-            # sigma2 = max(sigma2, 0.01)
-
-            try:
-                lhood = self._log_likelihood(X, W, sigma2)
-            except:
-                import ipdb
-                ipdb.set_trace()
-            lhoods.append(lhood)
-            print(lhood)
-
-        import matplotlib.pyplot as plt
-        plt.plot(lhoods)
-        plt.show()
-        self.W_em = W
-        self.sigma2_em = sigma2
 
 
 if __name__ == "__main__":

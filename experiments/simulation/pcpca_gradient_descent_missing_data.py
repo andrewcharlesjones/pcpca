@@ -6,10 +6,8 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 from scipy.stats import multivariate_normal
 from scipy.stats import pearsonr
-import sys
 from sklearn.decomposition import PCA
 from numpy.linalg import slogdet
-sys.path.append("../../models")
 from pcpca import PCPCA
 from cpca import CPCA
 

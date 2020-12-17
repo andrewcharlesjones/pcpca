@@ -1,7 +1,4 @@
-import sys
-sys.path.append("../../../models")
-from cpca import CPCA
-from pcpca import PCPCA
+from pcpca import PCPCA, CPCA
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt

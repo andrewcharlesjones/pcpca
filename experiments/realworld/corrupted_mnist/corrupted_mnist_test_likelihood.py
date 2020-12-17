@@ -6,9 +6,6 @@ import seaborn as sns
 from os.path import join as pjoin
 from scipy.stats import multivariate_normal
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-import sys
-sys.path.append("../../../models")
-
 
 N_COMPONENTS = 2
 

@@ -1,6 +1,5 @@
 import ipdb
 import matplotlib
-from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
 import pandas as pd
@@ -14,7 +13,6 @@ from sklearn.metrics import silhouette_score
 import sys
 from sklearn.decomposition import PCA
 from numpy.linalg import slogdet
-sys.path.append("../../../models")
 
 font = {'size': 30}
 matplotlib.rc('font', **font)

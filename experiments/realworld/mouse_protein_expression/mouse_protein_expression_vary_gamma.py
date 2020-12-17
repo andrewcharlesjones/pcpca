@@ -1,7 +1,5 @@
-import sys
-sys.path.append("../../../models")
-from cpca import CPCA
-from pcpca import PCPCA
+from pcpca import CPCA
+from pcpca import PCPCA, CPCA
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -52,13 +50,15 @@ if __name__ == "__main__":
 
     n, m = X.shape[1], Y.shape[1]
 
+    # import ipdb; ipdb.set_trace()
+
     import matplotlib
     font = {'size': 20}
     matplotlib.rc('font', **font)
     matplotlib.rcParams['text.usetex'] = True
 
-    gamma_range = [0, 0.5, 0.9]
-    plt.figure(figsize=((len(gamma_range) + 1) * 6, 5))
+    gamma_range = [0] # [0, 0.5, 0.9]
+    plt.figure(figsize=((len(gamma_range)) * 6, 5))
 
     for ii, gamma in enumerate(gamma_range):
 
@@ -82,18 +82,18 @@ if __name__ == "__main__":
         # pd.concat([X_reduced_df, Y_reduced_df], axis=0)
         results_df = X_reduced_df
 
-        sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
-                        hue="Genotype", palette=['green', 'orange'])
-        plt.xlabel("PCPC1")
-        plt.ylabel("PCPC2")
+        # sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
+        #                 hue="Genotype", palette=['green', 'orange'])
+        # plt.xlabel("PCPC1")
+        # plt.ylabel("PCPC2")
 
-        ax = plt.gca()
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles[1:], labels=labels[1:])
+        # ax = plt.gca()
+        # handles, labels = ax.get_legend_handles_labels()
+        # ax.legend(handles=handles[1:], labels=labels[1:])
 
         if ii == len(gamma_range) - 1:
 
-            plt.subplot(1, len(gamma_range)+1, ii+2)
+            plt.subplot(1, len(gamma_range), ii+1)
 
             # X_reduced_df.Genotype = "Foreground"
             results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)

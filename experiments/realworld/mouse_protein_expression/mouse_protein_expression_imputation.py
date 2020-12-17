@@ -1,8 +1,5 @@
 import ipdb
 import matplotlib
-import sys
-sys.path.append("../../../models")
-from cpca import CPCA
 from pcpca import PCPCA
 import numpy as np
 import pandas as pd
