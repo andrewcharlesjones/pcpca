@@ -55,9 +55,38 @@ Now we'll instantiate and fit the model with maximum likelihood estimation.
 
 ```python
 from pcpca import PCPCA
-pcpca = PCPCA(gamma=0.7, n_components=2)
+pcpca = PCPCA(gamma=0.7, n_components=1)
 pcpca.fit(X, Y)
 ```
+
+We can then visualize the line defined by W. (In general, this will be a hyperplane, but here we set n_components=1 for simplicity.)
+
+```python
+import numpy as np
+def abline(slope, intercept):
+    """Plot a line from slope and intercept"""
+    axes = plt.gca()
+    x_vals = np.array(axes.get_xlim())
+    y_vals = intercept + slope * x_vals
+    plt.plot(x_vals, y_vals, '--')
+
+# Re-plot data
+plt.scatter(X[0, :n//2], X[1, :n//2], alpha=0.5, label="Foreground group 1", s=80, color="green")
+plt.scatter(X[0, n//2:], X[1, n//2:], alpha=0.5, label="Foreground group 2", s=80, color="orange")
+plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Background", s=80, color="gray")
+plt.legend()
+plt.xlim([-7, 7])
+plt.ylim([-7, 7])
+
+# Plot line defined by W
+origin = np.array([[0], [0]])  # origin point
+abline(slope=pcpca.W_mle[1, 0] / pcpca.W_mle[0, 0], intercept=0)
+plt.show()
+```
+
+We can see that W finds the axis that splits the two foreground groups:
+
+![toydata_W](./plots/simulated/toydata_W.png)
 
 Once the model is fit, samples can be projected onto the components by calling `transform`:
 
