@@ -12,7 +12,7 @@ python setup.py install
 ```
 
 You should then be able to import the model as follows:
-```
+```python
 from pcpca import PCPCA
 ```
 
