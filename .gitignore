@@ -2,9 +2,12 @@
 .ipynb_checkpoints/
 __pycache__/
 .DS_Store
-# data/
+
+# Paper figures (large)
 figures/
 experiments/realworld/*.py
+
+# Data
 *.ipynb
 *.npy
 *.csv
@@ -15,3 +18,22 @@ experiments/realworld/*.py
 *.xlsx
 data/mhealth/README.txt
 !data/toy/*.csv
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
