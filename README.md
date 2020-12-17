@@ -1,6 +1,7 @@
 # Probabilistic contrastive principal component analysis
 
-This repo contains models and algorithms for probabilistic contrastive principal component analysis (PCPCA).
+This repo contains models and algorithms for probabilistic contrastive principal component analysis (PCPCA). Given a foreground dataset and a backround dataset, PCPCA is designed to find structure and variation that is enriched in the foreground relative to the background.
+
 
 The accompanying paper can be found here: https://arxiv.org/abs/2012.07977.
 
@@ -12,14 +13,9 @@ python setup.py install
 ```
 
 You should then be able to import the model as follows:
-```
+```python
 from pcpca import PCPCA
 ```
-
-## Motivation
-
-Given a foreground dataset X and a backround dataset Y, PCPCA is designed to find structure and variation that is enriched in the foreground relative to the background.
-
 ## Example
 
 Here's a simple example of fitting PCPCA with a toy dataset. In this data, the foreground contains two subgroups. The first half of the foreground samples belong to group 1, and the second half belong to group 2.
