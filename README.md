@@ -1,4 +1,4 @@
-# Probabilistic contrastive principal component analysis
+# [Probabilistic contrastive principal component analysis](https://arxiv.org/abs/2012.07977)
 
 This repo contains models and algorithms for probabilistic contrastive principal component analysis (PCPCA). Given a foreground dataset and a backround dataset, PCPCA is designed to find structure and variation that is enriched in the foreground relative to the background.
 
