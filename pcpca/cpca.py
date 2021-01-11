@@ -24,7 +24,7 @@ class CPCA:
         Cdiff = Cx - self.gamma * Cy
 
         # Eigendecomposition
-        eigvals, U = np.linalg.eig(Cdiff)
+        eigvals, U = np.linalg.eigh(Cdiff)
 
         # Sort by eigenvalues and truncate to number of components
         sorted_idx = np.argsort(-eigvals)
