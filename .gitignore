@@ -1,6 +1,7 @@
 *.pyc
 .ipynb_checkpoints/
 __pycache__/
+cached_models/
 .DS_Store
 
 # Paper figures (large)
