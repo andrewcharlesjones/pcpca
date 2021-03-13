@@ -61,7 +61,7 @@ for ii, gamma in enumerate(gamma_range):
     origin = np.array([[0], [0]])  # origin point
     abline(slope=pcpca.W_mle[1, 0] / pcpca.W_mle[0, 0], intercept=0)
 
-    print(pcpca.sigma2_mle)
+    print(pcpca.W_mle)
 plt.tight_layout()
 plt.savefig("../../plots/simulated/pcpca_vary_gamma.png")
 plt.show()
