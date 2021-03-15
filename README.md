@@ -48,7 +48,9 @@ plt.ylim([-7, 7])
 plt.show()
 ```
 
-![toydata](./plots/simulated/toydata.png)
+<p align="center">
+  <img src="./plots/simulated/toydata.png" width="500">
+</p>
 
 Now we'll instantiate and fit the model with maximum likelihood estimation.
 
