@@ -87,7 +87,9 @@ plt.show()
 
 We can see that W finds the axis that splits the two foreground groups:
 
-![toydata_W](./plots/simulated/toydata_W.png)
+<p align="center">
+  <img src="./plots/simulated/toydata_W.png" width="500">
+</p>
 
 Once the model is fit, samples can be projected onto the components by calling `transform`:
 
