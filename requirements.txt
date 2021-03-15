@@ -4,7 +4,7 @@ numpy==1.18.5
 tensorflow==1.15.0
 pystan==2.19.1.1
 tqdm==4.19.9
-pandas==1.2.2
+pandas==1.1.1
 ipdb==0.13.3
 seaborn==0.11.1
 Pillow==8.1.2
