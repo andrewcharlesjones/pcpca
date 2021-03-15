@@ -7,12 +7,9 @@ The accompanying paper can be found here: https://arxiv.org/abs/2012.07977.
 
 ## Installation
 
-After cloning this repo, navigate to its directory, and run the following command.
+PCPCA can be installed with pip:
 ```
-git clone git@github.com:andrewcharlesjones/pcpca.git
-cd pcpca
-pip install -r requirements.txt
-python setup.py install
+pip install pcpca
 ```
 
 You should then be able to import the model as follows:
