@@ -1,27 +1,24 @@
 import numpy as np
 from scipy.linalg import sqrtm
 from scipy.stats import multivariate_normal
+
 inv = np.linalg.inv
 slogdet = np.linalg.slogdet
 
 
 class PCPCA:
-
     def __init__(self, n_components=2, gamma=0.5):
-        """Initialize PCPCA model.
-        """
+        """Initialize PCPCA model."""
         self.k = n_components
         self.gamma = gamma
 
     def fit(self, X, Y):
-        """Fit model via maximum likelihood estimation.
-        """
+        """Fit model via maximum likelihood estimation."""
         assert X.shape[0] == Y.shape[0]  # Should have same number of features
         p, n, m = X.shape[0], X.shape[1], Y.shape[1]
 
         # Get sample covariance
-        Cx, Cy = self._compute_sample_covariance(
-            X), self._compute_sample_covariance(Y)
+        Cx, Cy = self._compute_sample_covariance(X), self._compute_sample_covariance(Y)
 
         # Differential covariance
         Cdiff = n * Cx - self.gamma * m * Cy
@@ -34,11 +31,10 @@ class PCPCA:
         eigvals = eigvals[sorted_idx]
         U = U[:, sorted_idx]
         Lambda = np.diag(eigvals)
-        Lambda, U = Lambda[:self.k, :self.k], U[:, :self.k]
+        Lambda, U = Lambda[: self.k, : self.k], U[:, : self.k]
 
         # MLE for sigma2
-        sigma2_mle = 1 / (p - self.k) * \
-            np.sum(eigvals[self.k:] / (n - self.gamma * m))
+        sigma2_mle = 1 / (p - self.k) * np.sum(eigvals[self.k :] / (n - self.gamma * m))
 
         # MLE for W
         Lambda_scaled = Lambda / (n - self.gamma * m)
@@ -48,9 +44,8 @@ class PCPCA:
         self.W_mle = W_mle
 
     def transform(self, X, Y):
-        """Embed data using fitted model.
-        """
-        
+        """Embed data using fitted model."""
+
         t = self.W_mle.T @ X, self.W_mle.T @ Y
         return t
 
@@ -60,26 +55,22 @@ class PCPCA:
         return t
 
     def sample(self):
-        """Sample from the fitted model.
-        """
+        """Sample from the fitted model."""
         pass
 
     def get_gamma_bound(self, X, Y):
-        """Compute the upper bound on gamma such that sigma2 > 0.
-        """
+        """Compute the upper bound on gamma such that sigma2 > 0."""
         p = X.shape[0]
         Cx = self._compute_sample_covariance(X)
         Cy = self._compute_sample_covariance(Y)
         Cx_eigvals = -np.sort(-np.linalg.eigvals(Cx))
         Cy_eigvals = -np.sort(-np.linalg.eigvals(Cy))
 
-        gamma_bound = np.sum(Cx_eigvals[self.k-1:]) / \
-            ((p - self.k) * Cy_eigvals[0])
+        gamma_bound = np.sum(Cx_eigvals[self.k - 1 :]) / ((p - self.k) * Cy_eigvals[0])
         return gamma_bound
 
     def _compute_sample_covariance(self, data):
-        """Compute sample covariance where data is a p x n matrix.
-        """
+        """Compute sample covariance where data is a p x n matrix."""
         n = data.shape[1]
         cov = 1 / n * data @ data.T
         return cov
@@ -132,9 +123,7 @@ class PCPCA:
 
         return X_imputed
 
-
     def gradient_descent_missing_data(self, X, Y, n_iter=500, verbose=True):
-
         def grads(X, Y, W, sigma2, gamma):
             p, n = X.shape
             m = Y.shape[1]
@@ -157,7 +146,9 @@ class PCPCA:
                 curr_summand_W = L.T @ A_inv @ (np.eye(Di) - np.outer(x, x) @ A_inv) @ L
                 running_sum_W_X += curr_summand_W
 
-                curr_summand_sigma2 = np.trace(A_inv @ L @ L.T) - np.trace(A_inv @ np.outer(x, x) @ A_inv @ L @ L.T)
+                curr_summand_sigma2 = np.trace(A_inv @ L @ L.T) - np.trace(
+                    A_inv @ np.outer(x, x) @ A_inv @ L @ L.T
+                )
                 running_sum_sigma2_X += curr_summand_sigma2
 
             running_sum_W_Y = np.zeros((p, p))
@@ -171,11 +162,15 @@ class PCPCA:
                 curr_summand_W = M.T @ B_inv @ (np.eye(Ej) - np.outer(y, y) @ B_inv) @ M
                 running_sum_W_Y += curr_summand_W
 
-                curr_summand_sigma2 = np.trace(B_inv @ M @ M.T) - np.trace(B_inv @ np.outer(y, y) @ B_inv @ M @ M.T)
+                curr_summand_sigma2 = np.trace(B_inv @ M @ M.T) - np.trace(
+                    B_inv @ np.outer(y, y) @ B_inv @ M @ M.T
+                )
                 running_sum_sigma2_Y += curr_summand_sigma2
 
             W_grad = -(running_sum_W_X - gamma * running_sum_W_Y) @ W
-            sigma2_grad = -0.5 * running_sum_sigma2_X + gamma/2.0 * running_sum_sigma2_Y
+            sigma2_grad = (
+                -0.5 * running_sum_sigma2_X + gamma / 2.0 * running_sum_sigma2_Y
+            )
 
             return W_grad, sigma2_grad
 
@@ -196,7 +191,11 @@ class PCPCA:
                 Di = L.shape[0]
                 A_inv = inv(A)
 
-                curr_summand = Di * np.log(2 * np.pi) + slogdet(A)[1] + np.trace(A_inv @ np.outer(x, x))
+                curr_summand = (
+                    Di * np.log(2 * np.pi)
+                    + slogdet(A)[1]
+                    + np.trace(A_inv @ np.outer(x, x))
+                )
                 running_sum_X += curr_summand
 
             running_sum_Y = 0
@@ -207,10 +206,14 @@ class PCPCA:
                 Ei = M.shape[0]
                 B_inv = inv(B)
 
-                curr_summand = Ei * np.log(2 * np.pi) + slogdet(B)[1] + np.trace(B_inv @ np.outer(y, y))
+                curr_summand = (
+                    Ei * np.log(2 * np.pi)
+                    + slogdet(B)[1]
+                    + np.trace(B_inv @ np.outer(y, y))
+                )
                 running_sum_Y += curr_summand
 
-            LL = -0.5 * running_sum_X + gamma/2.0 * running_sum_Y
+            LL = -0.5 * running_sum_X + gamma / 2.0 * running_sum_Y
 
             return LL
 
@@ -258,29 +261,29 @@ class PCPCA:
 
             # W
             # updates the moving averages of the gradient
-            m_t = beta_1*m_t + (1-beta_1)*g_t_W
+            m_t = beta_1 * m_t + (1 - beta_1) * g_t_W
             # updates the moving averages of the squared gradient
-            v_t = beta_2*v_t + (1-beta_2)*(g_t_W*g_t_W)
+            v_t = beta_2 * v_t + (1 - beta_2) * (g_t_W * g_t_W)
             # calculates the bias-corrected estimates
-            m_cap = m_t/(1-(beta_1**t))
+            m_cap = m_t / (1 - (beta_1 ** t))
             # calculates the bias-corrected estimates
-            v_cap = v_t/(1-(beta_2**t))
+            v_cap = v_t / (1 - (beta_2 ** t))
             W_prev = W
             # updates the parameters
-            W = W + (alpha*m_cap)/(np.sqrt(v_cap)+epsilon)
+            W = W + (alpha * m_cap) / (np.sqrt(v_cap) + epsilon)
 
             # sigma2
             # updates the moving averages of the gradient
-            m_t_sigma2 = beta_1*m_t_sigma2 + (1-beta_1)*g_t_sigma2
+            m_t_sigma2 = beta_1 * m_t_sigma2 + (1 - beta_1) * g_t_sigma2
             # updates the moving averages of the squared gradient
-            v_t_sigma2 = beta_2*v_t_sigma2 + (1-beta_2)*(g_t_sigma2*g_t_sigma2)
+            v_t_sigma2 = beta_2 * v_t_sigma2 + (1 - beta_2) * (g_t_sigma2 * g_t_sigma2)
             # calculates the bias-corrected estimates
-            m_cap = m_t_sigma2/(1-(beta_1**t))
+            m_cap = m_t_sigma2 / (1 - (beta_1 ** t))
             # calculates the bias-corrected estimates
-            v_cap = v_t_sigma2/(1-(beta_2**t))
+            v_cap = v_t_sigma2 / (1 - (beta_2 ** t))
             sigma2_prev = sigma2
             # updates the parameters
-            sigma2 = sigma2 + (alpha*m_cap)/(np.sqrt(v_cap)+epsilon)
+            sigma2 = sigma2 + (alpha * m_cap) / (np.sqrt(v_cap) + epsilon)
 
             # Threshold
             sigma2 = max(sigma2, 1e-4)
@@ -325,10 +328,15 @@ class PCPCA:
         # Compute Mi/Mj
         Aoo_inv = np.linalg.inv(Aoo)
         Ai_lowerright = Auu - Auo @ Aoo_inv @ Aou
-        Ai = np.block([
-            [np.zeros((n_observed, n_observed)),
-             np.zeros((n_observed, n_unobserved))],
-            [np.zeros((n_unobserved, n_observed)),    Ai_lowerright]])
+        Ai = np.block(
+            [
+                [
+                    np.zeros((n_observed, n_observed)),
+                    np.zeros((n_observed, n_unobserved)),
+                ],
+                [np.zeros((n_unobserved, n_observed)), Ai_lowerright],
+            ]
+        )
 
         # Compute mui/muj
         mui = np.concatenate([xo, Auo @ Aoo_inv @ xo])
@@ -359,7 +367,11 @@ class PCPCA:
 
     def _log_likelihood(self, X, W, sigma2):
         p = X.shape[0]
-        return np.sum(multivariate_normal.logpdf(X.T, mean=np.zeros(p), cov=W @ W.T + sigma2 * np.eye(p)))
+        return np.sum(
+            multivariate_normal.logpdf(
+                X.T, mean=np.zeros(p), cov=W @ W.T + sigma2 * np.eye(p)
+            )
+        )
 
 
 if __name__ == "__main__":
@@ -372,46 +384,54 @@ if __name__ == "__main__":
         axes = plt.gca()
         x_vals = np.array(axes.get_xlim())
         y_vals = intercept + slope * x_vals
-        plt.plot(x_vals, y_vals, '--')
+        plt.plot(x_vals, y_vals, "--")
 
     # Try this out with fake covariance matrices
     # cov = [
     #     [2.7, 2.6],
     #     [2.6, 2.7]
     # ]
-    covX = [
-        [2.7, 2.6],
-        [2.6, 2.7]
-    ]
-    covY = [
-        [4.7, 0.2],
-        [4.6, 0.3]
-    ]
+    covX = [[2.7, 2.6], [2.6, 2.7]]
+    covY = [[4.7, 0.2], [4.6, 0.3]]
     # Generate data
     n, m = 200, 200
 
     Y = multivariate_normal.rvs([0, 0], covY, size=m)
 
-    Xa = multivariate_normal.rvs([-1, 1], covX, size=n//2)
-    Xb = multivariate_normal.rvs([1, -1], covX, size=n//2)
+    Xa = multivariate_normal.rvs([-1, 1], covX, size=n // 2)
+    Xb = multivariate_normal.rvs([1, -1], covX, size=n // 2)
     X = np.concatenate([Xa, Xb], axis=0)
 
     X, Y = X.T, Y.T
 
-    gamma_range = [0, 0.2, 0.6,100]
+    gamma_range = [0, 0.2, 0.6, 100]
     k = 1
     plt.figure(figsize=(len(gamma_range) * 7, 5))
     for ii, gamma in enumerate(gamma_range):
         pcpca = PCPCA(gamma=gamma, n_components=k)
         pcpca.fit(X, Y)
 
-        plt.subplot(1, len(gamma_range), ii+1)
+        plt.subplot(1, len(gamma_range), ii + 1)
         if gamma == 0:
-            plt.title(r'$\gamma^\prime$={}  (PPCA)'.format(gamma))
+            plt.title(r"$\gamma^\prime$={}  (PPCA)".format(gamma))
         else:
-            plt.title(r'$\gamma^\prime$={}'.format(gamma))
-        plt.scatter(X[0, :n//2], X[1, :n//2], alpha=0.5, label="Foreground group 1", s=80, color="green")
-        plt.scatter(X[0, n//2:], X[1, n//2:], alpha=0.5, label="Foreground group 2", s=80, color="orange")
+            plt.title(r"$\gamma^\prime$={}".format(gamma))
+        plt.scatter(
+            X[0, : n // 2],
+            X[1, : n // 2],
+            alpha=0.5,
+            label="Foreground group 1",
+            s=80,
+            color="green",
+        )
+        plt.scatter(
+            X[0, n // 2 :],
+            X[1, n // 2 :],
+            alpha=0.5,
+            label="Foreground group 2",
+            s=80,
+            color="orange",
+        )
         plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Background", s=80, color="gray")
         plt.legend()
         plt.xlim([-7, 7])
@@ -424,4 +444,5 @@ if __name__ == "__main__":
     plt.tight_layout()
     plt.show()
     import ipdb
+
     ipdb.set_trace()

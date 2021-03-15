@@ -25,8 +25,11 @@ if __name__ == "__main__":
     data.Genotype[data.Genotype == "Ts65Dn"] = "DS"
 
     # Background
-    Y_df = data[(data.Behavior == "C/S") & (data.Genotype ==
-                                            "Non-DS") & (data.Treatment == "Saline")]
+    Y_df = data[
+        (data.Behavior == "C/S")
+        & (data.Genotype == "Non-DS")
+        & (data.Treatment == "Saline")
+    ]
     Y = Y_df[protein_names].values
     Y -= Y.mean(0)
     Y /= Y.std(0)
@@ -43,9 +46,10 @@ if __name__ == "__main__":
     n, m = X.shape[1], Y.shape[1]
 
     import matplotlib
-    font = {'size': 20}
-    matplotlib.rc('font', **font)
-    matplotlib.rcParams['text.usetex'] = True
+
+    font = {"size": 20}
+    matplotlib.rc("font", **font)
+    matplotlib.rcParams["text.usetex"] = True
 
     gamma_range_cpca = list(np.linspace(0, 400, 40))
     gamma_range_pcpca = list(np.linspace(0, 0.99, 40))
@@ -54,7 +58,7 @@ if __name__ == "__main__":
     cpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_cpca):
 
-        cpca = CPCA(gamma=n/m*gamma, n_components=N_COMPONENTS)
+        cpca = CPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = cpca.fit_transform(X, Y)
 
         X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
@@ -75,7 +79,7 @@ if __name__ == "__main__":
     pcpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_pcpca):
         gamma = gamma
-        pcpca = PCPCA(gamma=n/m*gamma, n_components=N_COMPONENTS)
+        pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
 
         if pcpca.sigma2_mle <= 0:
@@ -93,44 +97,48 @@ if __name__ == "__main__":
 
     plt.figure(figsize=(28, 6))
     plt.subplot(141)
-    plt.plot(cpca_gamma_plot_list, cluster_scores_cpca, '-o', linewidth=2)
+    plt.plot(cpca_gamma_plot_list, cluster_scores_cpca, "-o", linewidth=2)
     plt.title("CPCA")
     plt.ylim([0, 1])
     plt.xlim([0, cpca_gamma_plot_list[-1] + 40])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
     plt.axhline(np.max(cluster_scores_cpca), color="red", linestyle="--")
-    plt.xlabel(r'$\gamma^\prime$')
+    plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
     plt.subplot(142)
-    plt.plot(pcpca_gamma_plot_list, cluster_scores_pcpca, '-o', linewidth=2)
+    plt.plot(pcpca_gamma_plot_list, cluster_scores_pcpca, "-o", linewidth=2)
     plt.title("PCPCA")
     plt.ylim([0, 1])
     plt.xlim([0, pcpca_gamma_plot_list[-1] + 0.1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
     plt.axhline(np.max(cluster_scores_pcpca), color="red", linestyle="--")
-    plt.xlabel(r'$\gamma^\prime$')
+    plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
 
     plt.subplot(143)
     cpca = CPCA(gamma=cpca_gamma_plot_list[-1], n_components=N_COMPONENTS)
     X_reduced, Y_reduced = cpca.fit_transform(X, Y)
 
-    plt.title(r'CPCA, $\gamma^\prime$={}'.format(
-        round(cpca_gamma_plot_list[-1], 2)))
+    plt.title(r"CPCA, $\gamma^\prime$={}".format(round(cpca_gamma_plot_list[-1], 2)))
     X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
     # [str(x) for x in kmeans.labels_]
-    X_reduced_df['Genotype'] = X_df.Genotype.values
+    X_reduced_df["Genotype"] = X_df.Genotype.values
 
     Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
-    Y_reduced_df['Genotype'] = [
-        "Background" for _ in range(Y_reduced_df.shape[0])]
+    Y_reduced_df["Genotype"] = ["Background" for _ in range(Y_reduced_df.shape[0])]
 
     results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
-    results_df[["PCPC1", "PCPC2"]] = results_df[[
-        "PCPC1", "PCPC2"]] / results_df[["PCPC1", "PCPC2"]].std(0)
+    results_df[["PCPC1", "PCPC2"]] = results_df[["PCPC1", "PCPC2"]] / results_df[
+        ["PCPC1", "PCPC2"]
+    ].std(0)
 
-    sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
-                    hue="Genotype", palette=['green', 'orange', 'gray'])
+    sns.scatterplot(
+        data=results_df,
+        x="PCPC1",
+        y="PCPC2",
+        hue="Genotype",
+        palette=["green", "orange", "gray"],
+    )
     plt.xlabel("CPC1")
     plt.ylabel("CPC2")
     ax = plt.gca()
@@ -138,36 +146,39 @@ if __name__ == "__main__":
     ax.legend(handles=handles[1:], labels=labels[1:])
 
     plt.subplot(144)
-    pcpca = PCPCA(
-        gamma=n/m*pcpca_gamma_plot_list[-1], n_components=N_COMPONENTS)
+    pcpca = PCPCA(gamma=n / m * pcpca_gamma_plot_list[-1], n_components=N_COMPONENTS)
     X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
 
-    plt.title(r'PCPCA, $\gamma^\prime$={}'.format(
-        round(pcpca_gamma_plot_list[-1], 2)))
+    plt.title(r"PCPCA, $\gamma^\prime$={}".format(round(pcpca_gamma_plot_list[-1], 2)))
     X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-    X_reduced_df['Genotype'] = X_df.Genotype.values
+    X_reduced_df["Genotype"] = X_df.Genotype.values
 
     Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
-    Y_reduced_df['Genotype'] = [
-        "Background" for _ in range(Y_reduced_df.shape[0])]
+    Y_reduced_df["Genotype"] = ["Background" for _ in range(Y_reduced_df.shape[0])]
 
     results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
-    results_df[["PCPC1", "PCPC2"]] = results_df[[
-        "PCPC1", "PCPC2"]] / results_df[["PCPC1", "PCPC2"]].std(0)
+    results_df[["PCPC1", "PCPC2"]] = results_df[["PCPC1", "PCPC2"]] / results_df[
+        ["PCPC1", "PCPC2"]
+    ].std(0)
 
-    sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
-                    hue="Genotype", palette=['green', 'orange', 'gray'])
+    sns.scatterplot(
+        data=results_df,
+        x="PCPC1",
+        y="PCPC2",
+        hue="Genotype",
+        palette=["green", "orange", "gray"],
+    )
     ax = plt.gca()
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles[1:], labels=labels[1:])
 
     plt.tight_layout()
-    plt.savefig(
-        "../../../plots/mouse_protein_expression/cluster_score_comparison.png")
+    plt.savefig("../../../plots/mouse_protein_expression/cluster_score_comparison.png")
 
     print(np.max(cluster_scores_cpca))
     print(np.max(cluster_scores_pcpca))
     plt.show()
 
     import ipdb
+
     ipdb.set_trace()

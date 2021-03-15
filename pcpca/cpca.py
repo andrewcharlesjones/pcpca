@@ -3,22 +3,18 @@ from scipy.linalg import sqrtm
 
 
 class CPCA:
-
     def __init__(self, n_components, gamma):
-        """Initialize PCPCA model.
-        """
+        """Initialize PCPCA model."""
         self.k = n_components
         self.gamma = gamma
 
     def fit(self, X, Y):
-        """Fit model via maximum likelihood estimation.
-        """
+        """Fit model via maximum likelihood estimation."""
         assert X.shape[0] == Y.shape[0]  # Should have same number of features
         p, n, m = X.shape[0], X.shape[1], Y.shape[1]
 
         # Get sample covariance
-        Cx, Cy = self._compute_sample_covariance(
-            X), self._compute_sample_covariance(Y)
+        Cx, Cy = self._compute_sample_covariance(X), self._compute_sample_covariance(Y)
 
         # Differential covariance
         Cdiff = Cx - self.gamma * Cy
@@ -31,15 +27,14 @@ class CPCA:
         eigvals = eigvals[sorted_idx]
         U = U[:, sorted_idx]
         Lambda = np.diag(eigvals)
-        Lambda, U = Lambda[:self.k, :self.k], U[:, :self.k]
+        Lambda, U = Lambda[: self.k, : self.k], U[:, : self.k]
 
         W = U @ sqrtm(Lambda)
 
         self.W = W
 
     def transform(self, X, Y):
-        """Embed data using fitted model.
-        """
+        """Embed data using fitted model."""
         return self.W.T @ X, self.W.T @ Y
 
     def fit_transform(self, X, Y):
@@ -47,13 +42,11 @@ class CPCA:
         return self.transform(X, Y)
 
     def sample(self):
-        """Sample from the fitted model.
-        """
+        """Sample from the fitted model."""
         pass
 
     def get_gamma_bound(self, X, Y):
-        """Compute the upper bound on gamma such that the d'th eigenvalue of C is positive.
-        """
+        """Compute the upper bound on gamma such that the d'th eigenvalue of C is positive."""
         Cx = self._compute_sample_covariance(X)
         Cy = self._compute_sample_covariance(Y)
         Cx_eigvals = -np.sort(-np.linalg.eigvals(Cx))
@@ -63,8 +56,7 @@ class CPCA:
         return gamma_bound
 
     def _compute_sample_covariance(self, data):
-        """Compute sample covariance where data is a p x n matrix.
-        """
+        """Compute sample covariance where data is a p x n matrix."""
         n = data.shape[1]
         cov = 1 / n * data @ data.T
         return cov
@@ -76,22 +68,20 @@ if __name__ == "__main__":
     from scipy.stats import multivariate_normal
 
     import matplotlib
-    font = {'size': 15}
 
-    matplotlib.rc('font', **font)
+    font = {"size": 15}
+
+    matplotlib.rc("font", **font)
 
     # Try this out with fake covariance matrices
-    cov = [
-        [2.7, 2.6],
-        [2.6, 2.7]
-    ]
+    cov = [[2.7, 2.6], [2.6, 2.7]]
 
     def abline(slope, intercept):
         """Plot a line from slope and intercept"""
         axes = plt.gca()
         x_vals = np.array(axes.get_xlim())
         y_vals = intercept + slope * x_vals
-        plt.plot(x_vals, y_vals, '--')
+        plt.plot(x_vals, y_vals, "--")
 
     # Vary gamma and plot what happens
     # We expect that gamma equal to 0 recovers PCA on X
@@ -107,20 +97,23 @@ if __name__ == "__main__":
 
         # Generate data
         Y = multivariate_normal.rvs([0, 0], cov, size=m)
-        Xa = multivariate_normal.rvs([-1, 1], cov, size=n//2)
-        Xb = multivariate_normal.rvs([1, -1], cov, size=n//2)
+        Xa = multivariate_normal.rvs([-1, 1], cov, size=n // 2)
+        Xb = multivariate_normal.rvs([1, -1], cov, size=n // 2)
         X = np.concatenate([Xa, Xb], axis=0)
 
         X, Y = X.T, Y.T
 
         for ii, gamma in enumerate(gamma_range):
             gamma_orig = gamma
-            gamma *= m/n
+            gamma *= m / n
             cpca = CPCA(gamma=gamma, n_components=k)
             cpca.fit(X, Y)
 
-            plt.subplot(len(n_vals), len(gamma_range), len(
-                gamma_range) * sample_size_ii + ii+1)
+            plt.subplot(
+                len(n_vals),
+                len(gamma_range),
+                len(gamma_range) * sample_size_ii + ii + 1,
+            )
             plt.title("Gamma = m/n*{}".format(gamma_orig))
             plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)")
             plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")

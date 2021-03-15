@@ -11,7 +11,6 @@ from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import silhouette_score
 
 
-
 DATA_DIR = "../../../data/singlecell_bmmc"
 N_COMPONENTS = 5
 
@@ -23,12 +22,13 @@ if __name__ == "__main__":
     # posttransplant1 = pd.read_csv(pjoin(DATA_DIR, "clean", "posttransplant1.csv"), index_col=0)
 
     pretransplant2 = pd.read_csv(
-        pjoin(DATA_DIR, "clean", "pretransplant2.csv"), index_col=0)
+        pjoin(DATA_DIR, "clean", "pretransplant2.csv"), index_col=0
+    )
     posttransplant2 = pd.read_csv(
-        pjoin(DATA_DIR, "clean", "posttransplant2.csv"), index_col=0)
+        pjoin(DATA_DIR, "clean", "posttransplant2.csv"), index_col=0
+    )
 
-    healthy1 = pd.read_csv(
-        pjoin(DATA_DIR, "clean", "healthy1.csv"), index_col=0)
+    healthy1 = pd.read_csv(pjoin(DATA_DIR, "clean", "healthy1.csv"), index_col=0)
     # healthy2 = pd.read_csv(pjoin(DATA_DIR, "clean", "healthy2.csv"), index_col=0)
 
     # Background is made up of healthy cells
@@ -36,8 +36,7 @@ if __name__ == "__main__":
 
     X = pd.concat([pretransplant2, posttransplant2], axis=0).values
     X_labels = ["Pretransplant2" for _ in range(pretransplant2.shape[0])]
-    X_labels.extend(
-        ["Posttransplant2" for _ in range(posttransplant2.shape[0])])
+    X_labels.extend(["Posttransplant2" for _ in range(posttransplant2.shape[0])])
     X_labels = np.array(X_labels)
     assert X_labels.shape[0] == X.shape[0]
 
@@ -52,12 +51,13 @@ if __name__ == "__main__":
     n, m = X.shape[1], Y.shape[1]
 
     X_df = pd.DataFrame(X.T)
-    X_df['condition'] = X_labels
+    X_df["condition"] = X_labels
 
     import matplotlib
-    font = {'size': 20}
-    matplotlib.rc('font', **font)
-    matplotlib.rcParams['text.usetex'] = True
+
+    font = {"size": 20}
+    matplotlib.rc("font", **font)
+    matplotlib.rcParams["text.usetex"] = True
 
     gamma_range_cpca = np.linspace(0, 5, 20)
 
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     cpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_cpca):
 
-        cpca = CPCA(gamma=n/m*gamma, n_components=N_COMPONENTS)
+        cpca = CPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = cpca.fit_transform(X, Y)
         X_reduced = X_reduced[1:3, :]
 
@@ -82,17 +82,18 @@ if __name__ == "__main__":
         cluster_scores_cpca.append(cluster_score)
 
         X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-        X_reduced_df['condition'] = X_labels
-        plot_df = X_reduced_df[X_reduced_df.condition.isin(
-            ["Pretransplant2", "Posttransplant2"])]
+        X_reduced_df["condition"] = X_labels
+        plot_df = X_reduced_df[
+            X_reduced_df.condition.isin(["Pretransplant2", "Posttransplant2"])
+        ]
 
-    gamma_range_pcpca = np.linspace(0, 1-1e-3, 20)
+    gamma_range_pcpca = np.linspace(0, 1 - 1e-3, 20)
 
     cluster_scores_pcpca = []
     pcpca_gamma_plot_list = []
     for ii, gamma in enumerate(gamma_range_pcpca):
 
-        pcpca = PCPCA(gamma=n/m*gamma, n_components=N_COMPONENTS)
+        pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
         X_reduced = X_reduced[2:4, :]
 
@@ -108,28 +109,29 @@ if __name__ == "__main__":
         cluster_scores_pcpca.append(cluster_score)
 
         X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-        X_reduced_df['condition'] = X_labels
-        plot_df = X_reduced_df[X_reduced_df.condition.isin(
-            ["Pretransplant2", "Posttransplant2"])]
+        X_reduced_df["condition"] = X_labels
+        plot_df = X_reduced_df[
+            X_reduced_df.condition.isin(["Pretransplant2", "Posttransplant2"])
+        ]
 
     plt.figure(figsize=(14, 6))
 
     plt.subplot(121)
-    plt.plot(cpca_gamma_plot_list, cluster_scores_cpca, '-o', linewidth=2)
+    plt.plot(cpca_gamma_plot_list, cluster_scores_cpca, "-o", linewidth=2)
     plt.title("CPCA")
     plt.ylim([0, 1])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
     plt.axhline(np.max(cluster_scores_cpca), color="red", linestyle="--")
-    plt.xlabel(r'$\gamma^\prime$')
+    plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
 
     plt.subplot(122)
-    plt.plot(pcpca_gamma_plot_list, cluster_scores_pcpca, '-o', linewidth=2)
+    plt.plot(pcpca_gamma_plot_list, cluster_scores_pcpca, "-o", linewidth=2)
     plt.title("PCPCA")
     plt.ylim([0, 1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
     plt.axhline(np.max(cluster_scores_pcpca), color="red", linestyle="--")
-    plt.xlabel(r'$\gamma^\prime$')
+    plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
     plt.tight_layout()
     plt.savefig("../../../plots/scrnaseq/singlecell_silhouette_score.png")
@@ -181,4 +183,5 @@ if __name__ == "__main__":
 
     # plt.show()
     import ipdb
+
     ipdb.set_trace()

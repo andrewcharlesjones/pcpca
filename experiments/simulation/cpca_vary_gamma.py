@@ -2,36 +2,34 @@ import numpy as np
 from scipy.linalg import sqrtm
 
 import sys
+
 sys.path.append("../../models")
 from cpca import CPCA
-
-
 
 
 import matplotlib.pyplot as plt
 from scipy.stats import multivariate_normal
 
 # Try this out with fake covariance matrices
-cov = [
-    [2.7, 2.6],
-    [2.6, 2.7]
-]
+cov = [[2.7, 2.6], [2.6, 2.7]]
 
 # Generate data
 n, m = 200, 200
 Y = multivariate_normal.rvs([0, 0], cov, size=m)
-Xa = multivariate_normal.rvs([-1, 1], cov, size=n//2)
-Xb = multivariate_normal.rvs([1, -1], cov, size=n//2)
+Xa = multivariate_normal.rvs([-1, 1], cov, size=n // 2)
+Xb = multivariate_normal.rvs([1, -1], cov, size=n // 2)
 X = np.concatenate([Xa, Xb], axis=0)
 
 X, Y = X.T, Y.T
+
 
 def abline(slope, intercept):
     """Plot a line from slope and intercept"""
     axes = plt.gca()
     x_vals = np.array(axes.get_xlim())
     y_vals = intercept + slope * x_vals
-    plt.plot(x_vals, y_vals, '--')
+    plt.plot(x_vals, y_vals, "--")
+
 
 # Vary gamma and plot what happens
 # We expect that gamma equal to 0 recovers PCA on X
@@ -45,7 +43,7 @@ for ii, gamma in enumerate(gamma_range):
 
     print(np.mean(cpca.fit_transform(X, Y)[0]))
 
-    plt.subplot(1, len(gamma_range), ii+1)
+    plt.subplot(1, len(gamma_range), ii + 1)
     plt.title("Gamma = {}".format(gamma))
     plt.scatter(X[0, :], X[1, :], alpha=0.5, label="X (target)")
     plt.scatter(Y[0, :], Y[1, :], alpha=0.5, label="Y (background)")

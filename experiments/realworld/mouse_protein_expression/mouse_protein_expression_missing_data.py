@@ -14,9 +14,9 @@ import sys
 from sklearn.decomposition import PCA
 from numpy.linalg import slogdet
 
-font = {'size': 30}
-matplotlib.rc('font', **font)
-matplotlib.rcParams['text.usetex'] = True
+font = {"size": 30}
+matplotlib.rc("font", **font)
+matplotlib.rcParams["text.usetex"] = True
 
 inv = np.linalg.inv
 
@@ -39,8 +39,11 @@ data = data.fillna(0)
 protein_names = data.columns.values[1:78]
 
 # Background
-Y_df = data[(data.Behavior == "C/S") & (data.Genotype ==
-                                        "Control") & (data.Treatment == "Saline")]
+Y_df = data[
+    (data.Behavior == "C/S")
+    & (data.Genotype == "Control")
+    & (data.Treatment == "Saline")
+]
 Y = Y_df[protein_names].values
 Y -= Y.mean(0)
 Y /= Y.std(0)
@@ -63,7 +66,7 @@ def abline(slope, intercept):
     axes = plt.gca()
     x_vals = np.array(axes.get_xlim())
     y_vals = intercept + slope * x_vals
-    plt.plot(x_vals, y_vals, '--')
+    plt.plot(x_vals, y_vals, "--")
 
 
 def log_likelihood_fg(X, W, sigma2, gamma):
@@ -80,7 +83,9 @@ def log_likelihood_fg(X, W, sigma2, gamma):
         Di = L.shape[0]
         A_inv = inv(A)
 
-        curr_summand = Di * np.log(2 * np.pi) + slogdet(A)[1] + np.trace(A_inv @ np.outer(x, x))
+        curr_summand = (
+            Di * np.log(2 * np.pi) + slogdet(A)[1] + np.trace(A_inv @ np.outer(x, x))
+        )
         running_sum_X += curr_summand
 
     LL = -0.5 * running_sum_X
@@ -93,7 +98,7 @@ missing_p_range = [0.0, 0.3, 0.5, 0.7]
 n_repeats = 1
 W_errors = np.empty((n_repeats, len(missing_p_range)))
 
-plt.figure(figsize=(7*len(missing_p_range), 6))
+plt.figure(figsize=(7 * len(missing_p_range), 6))
 
 for ii, missing_p in enumerate(missing_p_range):
 
@@ -101,9 +106,11 @@ for ii, missing_p in enumerate(missing_p_range):
     X = X_full.copy()
     Y = Y_full.copy()
     missing_mask_X = np.random.choice(
-        [0, 1], p=[1-missing_p, missing_p], size=(p, n)).astype(bool)
+        [0, 1], p=[1 - missing_p, missing_p], size=(p, n)
+    ).astype(bool)
     missing_mask_Y = np.random.choice(
-        [0, 1], p=[1-missing_p, missing_p], size=(p, m)).astype(bool)
+        [0, 1], p=[1 - missing_p, missing_p], size=(p, m)
+    ).astype(bool)
 
     X[missing_mask_X] = np.nan
     Y[missing_mask_Y] = np.nan
@@ -122,26 +129,33 @@ for ii, missing_p in enumerate(missing_p_range):
 
     # Plot reduced foreground data
     X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-    X_reduced_df['Genotype'] = X_df.Genotype.values
+    X_reduced_df["Genotype"] = X_df.Genotype.values
 
     Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
-    Y_reduced_df['Genotype'] = [
-        "Background" for _ in range(Y_reduced_df.shape[0])]
+    Y_reduced_df["Genotype"] = ["Background" for _ in range(Y_reduced_df.shape[0])]
 
-    plt.subplot(1, len(missing_p_range), ii+1)
-    sns.scatterplot(data=X_reduced_df, x="PCPC1", y="PCPC2",
-                    hue="Genotype", palette=['green', 'orange'])
+    plt.subplot(1, len(missing_p_range), ii + 1)
+    sns.scatterplot(
+        data=X_reduced_df,
+        x="PCPC1",
+        y="PCPC2",
+        hue="Genotype",
+        palette=["green", "orange"],
+    )
 
     ax = plt.gca()
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles[1:], labels=labels[1:])
 
-    ax.legend(prop={'size': 20})
+    ax.legend(prop={"size": 20})
 
-    plt.xlabel(r'PCPC1')
+    plt.xlabel(r"PCPC1")
     plt.ylabel("PCPC2")
-    plt.title("Fraction missing: {}\nSilhouette score: {}".format(
-        missing_p, round(cluster_score, 2)))
+    plt.title(
+        "Fraction missing: {}\nSilhouette score: {}".format(
+            missing_p, round(cluster_score, 2)
+        )
+    )
 
 plt.tight_layout()
 plt.savefig("../../../plots/mouse_protein_expression/mouse_missing_data.png")

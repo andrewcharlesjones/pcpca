@@ -34,8 +34,11 @@ if __name__ == "__main__":
     data.Genotype[data.Genotype == "Ts65Dn"] = "DS"
 
     # Background
-    Y_df = data[(data.Behavior == "C/S") & (data.Genotype ==
-                                            "Non-DS") & (data.Treatment == "Saline")]
+    Y_df = data[
+        (data.Behavior == "C/S")
+        & (data.Genotype == "Non-DS")
+        & (data.Treatment == "Saline")
+    ]
     Y = Y_df[protein_names].values
     Y -= Y.mean(0)
     Y /= Y.std(0)
@@ -53,31 +56,31 @@ if __name__ == "__main__":
     # import ipdb; ipdb.set_trace()
 
     import matplotlib
-    font = {'size': 20}
-    matplotlib.rc('font', **font)
-    matplotlib.rcParams['text.usetex'] = True
 
-    gamma_range = [0] # [0, 0.5, 0.9]
+    font = {"size": 20}
+    matplotlib.rc("font", **font)
+    matplotlib.rcParams["text.usetex"] = True
+
+    gamma_range = [0]  # [0, 0.5, 0.9]
     plt.figure(figsize=((len(gamma_range)) * 6, 5))
 
     for ii, gamma in enumerate(gamma_range):
 
-        pcpca = PCPCA(gamma=n/m*gamma, n_components=N_COMPONENTS)
+        pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
 
-        plt.subplot(1, len(gamma_range)+1, ii+1)
+        plt.subplot(1, len(gamma_range) + 1, ii + 1)
         if gamma == 0:
-            plt.title(r'$\gamma^\prime$={} (PPCA)'.format(gamma))
+            plt.title(r"$\gamma^\prime$={} (PPCA)".format(gamma))
         else:
-            plt.title(r'$\gamma^\prime$={}'.format(gamma))
+            plt.title(r"$\gamma^\prime$={}".format(gamma))
 
         # Plot reduced foreground data
         X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-        X_reduced_df['Genotype'] = X_df.Genotype.values
+        X_reduced_df["Genotype"] = X_df.Genotype.values
 
         Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
-        Y_reduced_df['Genotype'] = [
-            "Background" for _ in range(Y_reduced_df.shape[0])]
+        Y_reduced_df["Genotype"] = ["Background" for _ in range(Y_reduced_df.shape[0])]
 
         # pd.concat([X_reduced_df, Y_reduced_df], axis=0)
         results_df = X_reduced_df
@@ -93,25 +96,28 @@ if __name__ == "__main__":
 
         if ii == len(gamma_range) - 1:
 
-            plt.subplot(1, len(gamma_range), ii+1)
+            plt.subplot(1, len(gamma_range), ii + 1)
 
             # X_reduced_df.Genotype = "Foreground"
             results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
 
-            sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
-                        hue="Genotype", palette=['green', 'orange', 'gray'])
+            sns.scatterplot(
+                data=results_df,
+                x="PCPC1",
+                y="PCPC2",
+                hue="Genotype",
+                palette=["green", "orange", "gray"],
+            )
             plt.xlabel("PCPC1")
             plt.ylabel("PCPC2")
-            plt.title(r'$\gamma^\prime$={}'.format(gamma))
+            plt.title(r"$\gamma^\prime$={}".format(gamma))
 
             ax = plt.gca()
             handles, labels = ax.get_legend_handles_labels()
             ax.legend(handles=handles[1:], labels=labels[1:])
 
-
     plt.tight_layout()
-    plt.savefig(
-        "../../../plots/mouse_protein_expression/mouse_pcpca_vary_gamma.png")
+    plt.savefig("../../../plots/mouse_protein_expression/mouse_pcpca_vary_gamma.png")
 
     plt.show()
 

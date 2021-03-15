@@ -38,20 +38,20 @@ if __name__ == "__main__":
 
     test_lls = []
     for gamma in gamma_range:
-        pcpca = PCPCA(gamma=gamma*n/m, n_components=N_COMPONENTS)
+        pcpca = PCPCA(gamma=gamma * n / m, n_components=N_COMPONENTS)
         pcpca.fit(X, Y)
-        test_ll = pcpca._log_likelihood(
-            digits_test, pcpca.W_mle, pcpca.sigma2_mle)
+        test_ll = pcpca._log_likelihood(digits_test, pcpca.W_mle, pcpca.sigma2_mle)
         test_lls.append(test_ll)
 
     import matplotlib
-    font = {'size': 20}
-    matplotlib.rc('font', **font)
-    matplotlib.rcParams['text.usetex'] = True
+
+    font = {"size": 20}
+    matplotlib.rc("font", **font)
+    matplotlib.rcParams["text.usetex"] = True
 
     plt.figure(figsize=(7, 5))
-    plt.plot(gamma_range, test_lls, 'o-')
-    plt.xlabel(r'$\gamma^\prime$')
+    plt.plot(gamma_range, test_lls, "o-")
+    plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Test log-likelihood")
     ax = plt.gca()
     plt.text(x=-0.03, y=-0.2, s="(PPCA)", transform=ax.transAxes)

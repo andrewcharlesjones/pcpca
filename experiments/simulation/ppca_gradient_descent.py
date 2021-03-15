@@ -22,27 +22,29 @@ X = W_true @ z + np.random.normal(scale=np.sqrt(sigma2_true), size=(p, n))
 
 
 def W_grad(X, W, sigma2):
-	p, n = X.shape
-	A = W @ W.T + sigma2 * np.eye(p)
-	A_inv = inv(A)
+    p, n = X.shape
+    A = W @ W.T + sigma2 * np.eye(p)
+    A_inv = inv(A)
 
-	grad = -n * A_inv @ W + A_inv @ X @ X.T @ A_inv @ W
-	return grad
+    grad = -n * A_inv @ W + A_inv @ X @ X.T @ A_inv @ W
+    return grad
+
 
 def sigma2_grad(X, W, sigma2):
-	p, n = X.shape
-	A = W @ W.T + sigma2 * np.eye(p)
-	A_inv = inv(A)
+    p, n = X.shape
+    A = W @ W.T + sigma2 * np.eye(p)
+    A_inv = inv(A)
 
-	grad = -n/2.0 * np.trace(A_inv) + 1/2.0 * np.trace(A_inv @ X @ X.T @ A_inv)
-	return grad
+    grad = -n / 2.0 * np.trace(A_inv) + 1 / 2.0 * np.trace(A_inv @ X @ X.T @ A_inv)
+    return grad
 
 
 def log_likelihood(X, W, sigma2):
-	p, n = X.shape
-	evidence_cov = W @ W.T + sigma2 * np.eye(p)
-	ll = multivariate_normal.logpdf(X.T, mean=np.zeros(p), cov=evidence_cov)
-	return np.sum(ll)
+    p, n = X.shape
+    evidence_cov = W @ W.T + sigma2 * np.eye(p)
+    ll = multivariate_normal.logpdf(X.T, mean=np.zeros(p), cov=evidence_cov)
+    return np.sum(ll)
+
 
 W = np.random.normal(size=(p, k))
 sigma2 = 2.0
@@ -53,11 +55,11 @@ lr_W = 0.01
 lr_sigma2 = 1e-3
 ll_trace = []
 for iter_num in range(n_iter):
-	W += lr_W * W_grad(X, W, sigma2)
-	sigma2 += lr_sigma2 * sigma2_grad(X, W, sigma2)
-	print(sigma2)
-	ll = log_likelihood(X, W, sigma2)
-	ll_trace.append(ll)
+    W += lr_W * W_grad(X, W, sigma2)
+    sigma2 += lr_sigma2 * sigma2_grad(X, W, sigma2)
+    print(sigma2)
+    ll = log_likelihood(X, W, sigma2)
+    ll_trace.append(ll)
 
 plt.plot(ll_trace)
 plt.xlabel("Iteration")
@@ -66,23 +68,14 @@ plt.show()
 
 W_corrs = np.empty((k, k))
 for ii in range(k):
-	for jj in range(k):
-		W_corrs[ii, jj] = pearsonr(W_true[:, ii], W[:, jj])[0]
+    for jj in range(k):
+        W_corrs[ii, jj] = pearsonr(W_true[:, ii], W[:, jj])[0]
 
 
 sns.heatmap(W_corrs, center=0)
 plt.show()
 
 
+import ipdb
 
-import ipdb; ipdb.set_trace()
-
-
-
-
-
-
-
-
-
-
+ipdb.set_trace()

@@ -1,7 +1,7 @@
 # [Probabilistic contrastive principal component analysis](https://arxiv.org/abs/2012.07977)
+[![Build Status](https://travis-ci.com/andrewcharlesjones/pcpca.svg?branch=main)](https://travis-ci.com/github/andrewcharlesjones/pcpca)
 
 This repo contains models and algorithms for probabilistic contrastive principal component analysis (PCPCA). Given a foreground dataset and a backround dataset, PCPCA is designed to find structure and variation that is enriched in the foreground relative to the background.
-
 
 The accompanying paper can be found here: https://arxiv.org/abs/2012.07977.
 
@@ -9,6 +9,9 @@ The accompanying paper can be found here: https://arxiv.org/abs/2012.07977.
 
 After cloning this repo, navigate to its directory, and run the following command.
 ```
+git clone git@github.com:andrewcharlesjones/pcpca.git
+cd pcpca
+pip install -r requirements.txt
 python setup.py install
 ```
 
