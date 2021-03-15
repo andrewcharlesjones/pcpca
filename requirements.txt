@@ -9,3 +9,4 @@ ipdb==0.13.3
 seaborn==0.11.1
 Pillow==8.1.2
 scikit_learn==0.24.1
+black == 20.8b1
