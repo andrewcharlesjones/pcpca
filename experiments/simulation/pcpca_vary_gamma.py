@@ -70,6 +70,7 @@ for ii, gamma in enumerate(gamma_range):
     abline(slope=pcpca.W_mle[1, 0] / pcpca.W_mle[0, 0], intercept=0)
 
     print(pcpca.W_mle)
+import ipdb; ipdb.set_trace()
 plt.tight_layout()
 plt.savefig("../../plots/simulated/pcpca_vary_gamma.png")
 plt.show()

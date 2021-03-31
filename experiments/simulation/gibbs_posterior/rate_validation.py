@@ -55,36 +55,46 @@ def abline(slope, intercept):
 
 
 beta = 0.5
-gamma = 0.3
+gamma = 0.85
+p = 2
 k = 1
-ns = (np.array([10, 30, 50, 100, 200]) / 2.0).astype(int)
-num_reps = 20
+ns = (np.array([200, 500]) / 2.0).astype(int)
+num_reps = 4
 frac_exceeding_list = np.empty((num_reps, len(ns)))
 frac_exceeding_list[:] = np.nan
 divs_list = []
 
+max_n = np.max(ns)
+max_m = max_n
+n_mcmc_iter = 20000
+n_posterior_samples = 1000
+n_posterior_samples_plot = 100
+
+cov = np.array([[2.7, 2.6], [2.6, 2.7]])
+cov_fg = cov
+cov_bg = cov
+
+Y_full = multivariate_normal.rvs([0, 0], cov, size=max_m)
+
+Xa_full = multivariate_normal.rvs([-1.4, 1.4], cov, size=max_n // 2)
+Xb_full = multivariate_normal.rvs([1.4, -1.4], cov, size=max_n // 2)
+X_full = np.concatenate([Xa_full, Xb_full], axis=0)
+
 for rep in range(num_reps):
 
     for n_idx, n in enumerate(ns):
-
-        # Generate data
+        
+        # Get subset of data
         m = n
-        p = 2
+        Xa = Xa_full[: n // 2, :]
+        Xb = Xb_full[: n // 2, :]
+        X = np.concatenate([Xa, Xb], axis=0)
+        Y = Y_full[:m, :]
 
-        # cov = [
-        #     [2.7, 2.6],
-        #     [2.6, 2.7]
-        # ]
-        # Y = multivariate_normal.rvs([0, 0], cov, size=m)
-
-        # Xa = multivariate_normal.rvs([-2, 2], cov, size=n//2)
-        # Xb = multivariate_normal.rvs([2, -2], cov, size=n//2)
-        # X = np.concatenate([Xa, Xb], axis=0)
-
-        cov_bg = np.array([[2.7, 2.6], [2.6, 2.7]])
-        Y = multivariate_normal.rvs(np.zeros(2), cov_bg, size=m)
-        cov_fg = np.array([[2.7, 0.6], [0.6, 2.7]])
-        X = multivariate_normal.rvs(np.zeros(2), cov_fg, size=n)
+        # cov_bg = np.array([[2.7, 2.6], [2.6, 2.7]])
+        # Y = multivariate_normal.rvs(np.zeros(2), cov_bg, size=m)
+        # cov_fg = np.array([[2.7, 0.1], [0.1, 2.7]])
+        # X = multivariate_normal.rvs(np.zeros(2), cov_fg, size=n)
 
         # plt.scatter(Y[:, 0], Y[:, 1], alpha=0.5, label="Background", s=50, color="gray")
         # plt.scatter(X[:, 0], X[:, 1], alpha=0.5, label="Background", s=50, color="red")
@@ -104,6 +114,7 @@ for rep in range(num_reps):
             return div
 
         ## Compute risk minimizer
+        # import ipdb; ipdb.set_trace()
         C = beta * cov_fg - (1 - beta) * gamma * cov_bg
         eigvals, eigvecs = np.linalg.eigh(C)
         sorted_idx = np.argsort(-eigvals)
@@ -130,12 +141,17 @@ for rep in range(num_reps):
             with open(cache_fn, "wb") as f:
                 pickle.dump(sm, f)
 
-        # Fit model
-        fit = sm.sampling(data=pcpca_data, iter=3000, warmup=2900, chains=4)
+        
 
-        rhat_vals = fit.summary()["summary"][:, -1]
-        if np.sum(rhat_vals < 0.9) or np.sum(rhat_vals > 1.1):
-            continue
+        
+        repeat_flag = True
+        while repeat_flag:
+            # Fit model
+            fit = sm.sampling(data=pcpca_data, iter=4000, warmup=3500, chains=4, refresh=0)
+            rhat_vals = fit.summary()["summary"][:, -1]
+            repeat_flag = (np.sum(rhat_vals < 0.9) > 0) or (np.sum(rhat_vals > 1.1) > 0)
+            print("IS REPEATING: {}".format(repeat_flag))
+            # import ipdb; ipdb.set_trace()
 
         # Get samples
         W_list = np.squeeze(fit.extract()["W"])
@@ -157,8 +173,8 @@ for rep in range(num_reps):
             risk_list[ii] = risk
 
         # epsilon = np.log(n + m) / ((n + m)**(0.5))
-        epsilon = np.log(n + m) / (2 * (n + m) ** (0.5))
-        # epsilon = ((n + m)**(-0.5))
+        # epsilon = np.log(n + m) / (2 * (n + m) ** (0.5))
+        epsilon = ((n + m)**(-0.5))
 
         num_exceeding = np.sum(div_list > epsilon)
         frac_exceeding = 1.0 * num_exceeding / len(div_list)

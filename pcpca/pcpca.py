@@ -63,9 +63,8 @@ class PCPCA:
         p = X.shape[0]
         Cx = self._compute_sample_covariance(X)
         Cy = self._compute_sample_covariance(Y)
-        Cx_eigvals = -np.sort(-np.linalg.eigvals(Cx))
-        Cy_eigvals = -np.sort(-np.linalg.eigvals(Cy))
-
+        Cx_eigvals = -np.sort(-np.linalg.eigh(Cx)[0])
+        Cy_eigvals = -np.sort(-np.linalg.eigh(Cy)[0])
         gamma_bound = np.sum(Cx_eigvals[self.k - 1 :]) / ((p - self.k) * Cy_eigvals[0])
         return gamma_bound
 
