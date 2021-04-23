@@ -45,9 +45,17 @@ class PCPCA:
 
     def transform(self, X, Y):
         """Embed data using fitted model."""
+        # Returns mean of distribution of latent variables given data
+        # z | X ~ N(M^{-1} W^T X, \sigma^2 M^{-1})
 
-        t = self.W_mle.T @ X, self.W_mle.T @ Y
-        return t
+        assert X.shape[0] == Y.shape[0]  # Should have same number of features
+        p, n, m = X.shape[0], X.shape[1], Y.shape[1]
+
+        M = self.W_mle.T @ self.W_mle + self.sigma2_mle * np.eye(self.k)
+        premultiplier = inv(M) @ self.W_mle.T
+        X_reduced = premultiplier @ X
+        Y_reduced = premultiplier @ Y
+        return X_reduced, Y_reduced
 
     def fit_transform(self, X, Y):
         self.fit(X, Y)

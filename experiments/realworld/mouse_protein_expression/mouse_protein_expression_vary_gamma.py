@@ -61,7 +61,7 @@ if __name__ == "__main__":
     matplotlib.rc("font", **font)
     matplotlib.rcParams["text.usetex"] = True
 
-    gamma_range = [0]  # [0, 0.5, 0.9]
+    gamma_range = [0, 0.5, 0.9]
     plt.figure(figsize=((len(gamma_range)) * 6, 5))
 
     for ii, gamma in enumerate(gamma_range):
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
 
-        plt.subplot(1, len(gamma_range) + 1, ii + 1)
+        plt.subplot(1, len(gamma_range), ii + 1)
         if gamma == 0:
             plt.title(r"$\gamma^\prime$={} (PPCA)".format(gamma))
         else:
@@ -82,21 +82,9 @@ if __name__ == "__main__":
         Y_reduced_df = pd.DataFrame(Y_reduced.T, columns=["PCPC1", "PCPC2"])
         Y_reduced_df["Genotype"] = ["Background" for _ in range(Y_reduced_df.shape[0])]
 
-        # pd.concat([X_reduced_df, Y_reduced_df], axis=0)
-        results_df = X_reduced_df
-
-        # sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
-        #                 hue="Genotype", palette=['green', 'orange'])
-        # plt.xlabel("PCPC1")
-        # plt.ylabel("PCPC2")
-
-        # ax = plt.gca()
-        # handles, labels = ax.get_legend_handles_labels()
-        # ax.legend(handles=handles[1:], labels=labels[1:])
-
         if ii == len(gamma_range) - 1:
 
-            plt.subplot(1, len(gamma_range), ii + 1)
+            # plt.subplot(1, len(gamma_range), ii + 1)
 
             # X_reduced_df.Genotype = "Foreground"
             results_df = pd.concat([X_reduced_df, Y_reduced_df], axis=0)
@@ -108,13 +96,28 @@ if __name__ == "__main__":
                 hue="Genotype",
                 palette=["green", "orange", "gray"],
             )
-            plt.xlabel("PCPC1")
-            plt.ylabel("PCPC2")
-            plt.title(r"$\gamma^\prime$={}".format(gamma))
+        else:
 
-            ax = plt.gca()
-            handles, labels = ax.get_legend_handles_labels()
-            ax.legend(handles=handles[1:], labels=labels[1:])
+            # pd.concat([X_reduced_df, Y_reduced_df], axis=0)
+            results_df = X_reduced_df
+
+            sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
+                            hue="Genotype", palette=['green', 'orange'])
+        plt.xlabel("PCPC1")
+        plt.ylabel("PCPC2")
+
+        ax = plt.gca()
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles=handles[1:], labels=labels[1:])
+
+        
+            # plt.xlabel("PCPC1")
+            # plt.ylabel("PCPC2")
+            # plt.title(r"$\gamma^\prime$={}".format(gamma))
+
+            # ax = plt.gca()
+            # handles, labels = ax.get_legend_handles_labels()
+            # ax.legend(handles=handles[1:], labels=labels[1:])
 
     plt.tight_layout()
     plt.savefig("../../../plots/mouse_protein_expression/mouse_pcpca_vary_gamma.png")
