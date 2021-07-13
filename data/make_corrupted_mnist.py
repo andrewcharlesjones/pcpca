@@ -5,11 +5,13 @@ from PIL import Image
 from utils import resize_and_crop
 import os
 from tqdm import tqdm
+from sklearn.linear_model import LogisticRegression
 
 ###############################################################################################
 # Code here is partially borrowed from Abubakar Abid: https://github.com/abidlabs/contrastive #
 ###############################################################################################
 
+SUPERPOSITION_FRACTION_DIGIT = 0.1
 
 # Read MNIST
 (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
@@ -86,7 +88,7 @@ for i in tqdm(range(target.shape[0])):
     x1, x2, y1, y2 = loc[0], loc[0] + 28, loc[1], loc[1] + 28
     grass_cropped = reshaped_grass[x1:x2, :][:, y1:y2]
     superimposed_patch = np.reshape(grass_cropped, [1, 784])
-    target[i] = 0.25 * foreground[i] + superimposed_patch
+    target[i] = SUPERPOSITION_FRACTION_DIGIT * foreground[i] + superimposed_patch
 
     # Background
     # (Just grass)
@@ -103,6 +105,11 @@ for i in tqdm(range(target.shape[0])):
 np.save("./corrupted_mnist/foreground.npy", target)
 np.save("./corrupted_mnist/background.npy", background)
 np.save("./corrupted_mnist/foreground_labels.npy", target_labels)
+
+logreg = LogisticRegression()
+logreg.fit(target[:4000], target_labels[:4000])
+train_acc = logreg.score(target[4000:], target_labels[4000:])
+print("Train accuracy: {}".format(round(train_acc, 3)))
 
 n_show = 6
 

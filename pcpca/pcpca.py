@@ -14,8 +14,12 @@ class PCPCA:
 
     def fit(self, X, Y):
         """Fit model via maximum likelihood estimation."""
-        assert X.shape[0] == Y.shape[0]  # Should have same number of features
+        if X.shape[0] != Y.shape[0]:  # Should have same number of features
+            raise ValueError("Data dimensions for foreground and background must match.")
         p, n, m = X.shape[0], X.shape[1], Y.shape[1]
+
+        if p <= self.k:
+            raise ValueError("Latent dimension must be less than data dimension.")
 
         # Get sample covariance
         Cx, Cy = self._compute_sample_covariance(X), self._compute_sample_covariance(Y)

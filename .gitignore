@@ -17,6 +17,7 @@ experiments/realworld/*.py
 *.tsv
 *.mtx
 *.xlsx
+*.zip
 data/mhealth/README.txt
 !data/toy/*.csv
 

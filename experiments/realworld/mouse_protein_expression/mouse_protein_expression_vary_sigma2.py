@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
-
+from tqdm import tqdm
 
 DATA_PATH = "../../../data/mouse_protein_expression/clean/Data_Cortex_Nuclear.csv"
 N_COMPONENTS = 2
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     sigma2_range = np.arange(0, 5.5, 0.5)
 
-    n_repeats = 10
+    n_repeats = 100
 
     best_gammas_cpca = []
     best_gammas_pcpca = []
@@ -71,68 +71,71 @@ if __name__ == "__main__":
     best_cluster_scores_cpca = np.empty((n_repeats, len(sigma2_range)))
     best_cluster_scores_pcpca = np.empty((n_repeats, len(sigma2_range)))
 
-    for repeat_ii in range(n_repeats):
-        for sigma2_ii, sigma2 in enumerate(sigma2_range):
+    with tqdm(total=n_repeats*len(sigma2_range)) as pbar:
+        for repeat_ii in range(n_repeats):
+            for sigma2_ii, sigma2 in enumerate(sigma2_range):
 
-            print("Sigma2 = {}".format(sigma2))
+                # print("Sigma2 = {}".format(sigma2))
 
-            # Add noise
-            curr_X = X + np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, n))
-            curr_Y = Y + np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, m))
+                # Add noise
+                curr_X = X + np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, n))
+                curr_Y = Y + np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, m))
 
-            cluster_scores_cpca = []
-            cpca_gamma_plot_list = []
-            for ii, gamma in enumerate(gamma_range_cpca):
+                cluster_scores_cpca = []
+                cpca_gamma_plot_list = []
+                for ii, gamma in enumerate(gamma_range_cpca):
 
-                cpca = CPCA(gamma=gamma, n_components=N_COMPONENTS)
-                X_reduced, Y_reduced = cpca.fit_transform(curr_X, curr_Y)
+                    cpca = CPCA(gamma=gamma, n_components=N_COMPONENTS)
+                    X_reduced, Y_reduced = cpca.fit_transform(curr_X, curr_Y)
 
-                try:
+                    try:
+                        kmeans = KMeans(n_clusters=2, random_state=0).fit(X_reduced.T)
+                    except:
+                        cpca_fail_gamma = gamma
+                        break
+                    cpca_gamma_plot_list.append(gamma)
+
+                    true_labels = pd.factorize(X_df.Genotype)[0]
+                    cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+                    cluster_scores_cpca.append(cluster_score)
+
+                best_gamma = np.array(gamma_range_cpca)[
+                    np.argmax(np.array(cluster_scores_cpca))
+                ]
+                best_gammas_cpca.append(best_gamma)
+                best_cluster_scores_cpca[repeat_ii, sigma2_ii] = np.max(
+                    np.array(cluster_scores_cpca)
+                )
+
+                cluster_scores_pcpca = []
+                pcpca_gamma_plot_list = []
+                for ii, gamma in enumerate(gamma_range_pcpca):
+
+                    pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
+                    X_reduced, Y_reduced = pcpca.fit_transform(curr_X, curr_Y)
+
+                    if pcpca.sigma2_mle <= 0:
+                        pcpca_fail_gamma = gamma
+                        break
+
+                    X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
+                    Y_reduced = (Y_reduced.T / Y_reduced.T.std(0)).T
                     kmeans = KMeans(n_clusters=2, random_state=0).fit(X_reduced.T)
-                except:
-                    cpca_fail_gamma = gamma
-                    break
-                cpca_gamma_plot_list.append(gamma)
+                    pcpca_gamma_plot_list.append(gamma)
 
-                true_labels = pd.factorize(X_df.Genotype)[0]
-                cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-                cluster_scores_cpca.append(cluster_score)
+                    true_labels = pd.factorize(X_df.Genotype)[0]
+                    cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+                    cluster_scores_pcpca.append(cluster_score)
 
-            best_gamma = np.array(gamma_range_cpca)[
-                np.argmax(np.array(cluster_scores_cpca))
-            ]
-            best_gammas_cpca.append(best_gamma)
-            best_cluster_scores_cpca[repeat_ii, sigma2_ii] = np.max(
-                np.array(cluster_scores_cpca)
-            )
+                best_gamma = np.array(gamma_range_pcpca)[
+                    np.argmax(np.array(cluster_scores_pcpca))
+                ]
+                best_gammas_pcpca.append(best_gamma)
+                best_cluster_scores_pcpca[repeat_ii, sigma2_ii] = np.max(
+                    np.array(cluster_scores_pcpca)
+                )
 
-            cluster_scores_pcpca = []
-            pcpca_gamma_plot_list = []
-            for ii, gamma in enumerate(gamma_range_pcpca):
-
-                pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
-                X_reduced, Y_reduced = pcpca.fit_transform(curr_X, curr_Y)
-
-                if pcpca.sigma2_mle <= 0:
-                    pcpca_fail_gamma = gamma
-                    break
-
-                X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
-                Y_reduced = (Y_reduced.T / Y_reduced.T.std(0)).T
-                kmeans = KMeans(n_clusters=2, random_state=0).fit(X_reduced.T)
-                pcpca_gamma_plot_list.append(gamma)
-
-                true_labels = pd.factorize(X_df.Genotype)[0]
-                cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-                cluster_scores_pcpca.append(cluster_score)
-
-            best_gamma = np.array(gamma_range_pcpca)[
-                np.argmax(np.array(cluster_scores_pcpca))
-            ]
-            best_gammas_pcpca.append(best_gamma)
-            best_cluster_scores_pcpca[repeat_ii, sigma2_ii] = np.max(
-                np.array(cluster_scores_pcpca)
-            )
+                pbar.update(1)
 
     plt.figure(figsize=(7, 5))
 
