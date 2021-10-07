@@ -11,7 +11,7 @@ from sklearn.linear_model import LogisticRegression
 # Code here is partially borrowed from Abubakar Abid: https://github.com/abidlabs/contrastive #
 ###############################################################################################
 
-SUPERPOSITION_FRACTION_DIGIT = 0.1
+SUPERPOSITION_FRACTION_DIGIT = 0.25
 
 # Read MNIST
 (X_train, Y_train), (X_test, Y_test) = mnist.load_data()
@@ -106,10 +106,10 @@ np.save("./corrupted_mnist/foreground.npy", target)
 np.save("./corrupted_mnist/background.npy", background)
 np.save("./corrupted_mnist/foreground_labels.npy", target_labels)
 
-logreg = LogisticRegression()
-logreg.fit(target[:4000], target_labels[:4000])
-train_acc = logreg.score(target[4000:], target_labels[4000:])
-print("Train accuracy: {}".format(round(train_acc, 3)))
+# logreg = LogisticRegression()
+# logreg.fit(target[:4000], target_labels[:4000])
+# train_acc = logreg.score(target[4000:], target_labels[4000:])
+# print("Train accuracy: {}".format(round(train_acc, 3)))
 
 n_show = 6
 

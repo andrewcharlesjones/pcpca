@@ -134,7 +134,7 @@ class PCPCA:
 
         return X_imputed
 
-    def gradient_descent_missing_data(self, X, Y, n_iter=500, verbose=True):
+    def gradient_descent_missing_data(self, X, Y, n_iter=500, verbose=True, learning_rate=0.01):
         def grads(X, Y, W, sigma2, gamma):
             p, n = X.shape
             m = Y.shape[1]
@@ -251,7 +251,7 @@ class PCPCA:
         W, sigma2 = pcpca_init.W_mle, 2  # pcpca_init.sigma2_mle
 
         # Adam
-        alpha = 0.01
+        # alpha = 0.01
         beta_1 = 0.9
         beta_2 = 0.999  # initialize the values of the parameters
         epsilon = 1e-8
@@ -281,7 +281,7 @@ class PCPCA:
             v_cap = v_t / (1 - (beta_2 ** t))
             W_prev = W
             # updates the parameters
-            W = W + (alpha * m_cap) / (np.sqrt(v_cap) + epsilon)
+            W = W + (learning_rate * m_cap) / (np.sqrt(v_cap) + epsilon)
 
             # sigma2
             # updates the moving averages of the gradient
@@ -294,7 +294,7 @@ class PCPCA:
             v_cap = v_t_sigma2 / (1 - (beta_2 ** t))
             sigma2_prev = sigma2
             # updates the parameters
-            sigma2 = sigma2 + (alpha * m_cap) / (np.sqrt(v_cap) + epsilon)
+            sigma2 = sigma2 + (learning_rate * m_cap) / (np.sqrt(v_cap) + epsilon)
 
             # Threshold
             sigma2 = max(sigma2, 1e-4)

@@ -6,16 +6,19 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 from scipy.stats import multivariate_normal
 from scipy.stats import pearsonr
+from scipy import stats
 from sklearn.decomposition import PCA
 from numpy.linalg import slogdet
-from pcpca import PCPCA
-from cpca import CPCA
+from pcpca import PCPCA, CPCA
+from scipy import stats
 
 import matplotlib
 
 font = {"size": 20}
 matplotlib.rc("font", **font)
 matplotlib.rcParams["text.usetex"] = True
+
+N_GD_ITER = 300
 
 
 def mean_confidence_interval(data, confidence=0.95):
@@ -98,8 +101,12 @@ def log_likelihood_fg(X, W, sigma2, gamma):
 gamma = 0.05
 missing_p_range = np.arange(0.1, 0.8, 0.1)
 n_repeats = 5
+# missing_p_range = np.arange(0.1, 0.3, 0.1)
+# n_repeats = 2
 W_errors = np.empty((n_repeats, len(missing_p_range)))
 imputation_errors_pcpca = np.empty((n_repeats, len(missing_p_range)))
+imputation_errors_sample_means = np.empty((n_repeats, len(missing_p_range)))
+imputation_errors_feature_means = np.empty((n_repeats, len(missing_p_range)))
 
 for repeat_ii in range(n_repeats):
     for ii, missing_p in enumerate(missing_p_range):
@@ -119,8 +126,27 @@ for repeat_ii in range(n_repeats):
 
         n_obs, m_obs = np.sum(~np.isnan(X.flatten())), np.sum(~np.isnan(Y.flatten()))
 
+        ## Compute imputation error just using the row and column means
+        sample_means = np.nanmean(X, axis=0)
+        X_imputed_sample_means = X.copy()
+        X_imputed_sample_means = pd.DataFrame(X_imputed_sample_means).fillna(pd.Series(sample_means)).values
+        imputation_mse = np.mean(
+            (X_full[missing_mask_X] - X_imputed_sample_means[missing_mask_X]) ** 2
+        )
+        imputation_errors_sample_means[repeat_ii, ii] = imputation_mse
+
+        feature_means = np.nanmean(X, axis=1)
+        X_imputed_feature_means = X.copy()
+        X_imputed_feature_means = pd.DataFrame(X_imputed_feature_means.T).fillna(pd.Series(feature_means)).values.T
+        imputation_mse = np.mean(
+            (X_full[missing_mask_X] - X_imputed_feature_means[missing_mask_X]) ** 2
+        )
+        imputation_errors_feature_means[repeat_ii, ii] = imputation_mse
+
+        ## Run PCPCA
+
         pcpca = PCPCA(gamma=gamma, n_components=k)
-        W, sigma2 = pcpca.gradient_descent_missing_data(X, Y, n_iter=300)
+        W, sigma2 = pcpca.gradient_descent_missing_data(X, Y, n_iter=N_GD_ITER)
 
         ll_test = log_likelihood_fg(X_test, W, sigma2, gamma)
         W_errors[repeat_ii, ii] = ll_test
@@ -145,7 +171,10 @@ for repeat_ii in range(n_repeats):
         imputation_mse = np.mean(
             (X_full[missing_mask_X] - X_imputed[missing_mask_X]) ** 2
         )
+        
         imputation_errors_pcpca[repeat_ii, ii] = imputation_mse
+
+
 
 
 gamma = 0.0
@@ -172,7 +201,7 @@ for repeat_ii in range(n_repeats):
 
         pcpca = PCPCA(gamma=gamma, n_components=k)
         W, sigma2 = pcpca.gradient_descent_missing_data(
-            np.concatenate([X, Y], axis=1), Y, n_iter=300
+            np.concatenate([X, Y], axis=1), Y, n_iter=N_GD_ITER
         )
 
         ll_test = log_likelihood_fg(X_test, W, sigma2, gamma)
@@ -204,10 +233,10 @@ plt.errorbar(
     fmt="-o",
     label="PPCA",
 )
-plt.legend()
+# plt.legend()
 plt.xlabel(r"Fraction missing")
 plt.ylabel("Foreground log-likelihod (test)")
-plt.title("PCPCA, missing data")
+plt.title("Missing data (simulation)")
 plt.tight_layout()
 plt.savefig("../../plots/simulated/pcpca_missing_data.png")
 plt.show()
@@ -228,10 +257,26 @@ plt.errorbar(
     fmt="-o",
     label="PPCA",
 )
+plt.errorbar(
+    missing_p_range,
+    np.mean(imputation_errors_sample_means, axis=0),
+    yerr=mean_confidence_interval(imputation_errors_sample_means),
+    fmt="-o",
+    label="Sample means",
+)
+plt.errorbar(
+    missing_p_range,
+    np.mean(imputation_errors_feature_means, axis=0),
+    yerr=mean_confidence_interval(imputation_errors_feature_means),
+    fmt="-o",
+    label="Feature means",
+)
+
+# import ipdb; ipdb.set_trace()
 plt.xlabel(r"Fraction missing")
 plt.ylabel("MSE")
-plt.title("Imputation")
-plt.legend()
+plt.title("Imputation (simulation)")
+# plt.legend()
 plt.tight_layout()
 plt.savefig("../../plots/simulated/pcpca_missing_data_imputation.png")
 plt.show()

@@ -22,9 +22,15 @@ class CPCA:
         # Eigendecomposition
         eigvals, U = np.linalg.eigh(Cdiff)
 
-        # Sort by eigenvalues and truncate to number of components
+        # Sort by eigenvalues
         sorted_idx = np.argsort(-eigvals)
         eigvals = eigvals[sorted_idx]
+
+        # Stop if eigenvalue at n_components is negative
+        if eigvals[self.k - 1]:
+            raise ValueError("Some of the first n_components eigenvalues are negative. Try lowering gamma or reducing n_components.")
+
+        # Truncate to number of components
         U = U[:, sorted_idx]
         Lambda = np.diag(eigvals)
         Lambda, U = Lambda[: self.k, : self.k], U[:, : self.k]

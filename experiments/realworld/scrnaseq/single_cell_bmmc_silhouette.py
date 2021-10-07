@@ -9,10 +9,12 @@ from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 from sklearn.metrics import silhouette_score
-
+import sys
+sys.path.append("../../../clvm")
+from clvm import CLVM
 
 DATA_DIR = "../../../data/singlecell_bmmc"
-N_COMPONENTS = 5
+N_COMPONENTS = 25
 
 
 if __name__ == "__main__":
@@ -32,7 +34,8 @@ if __name__ == "__main__":
     # healthy2 = pd.read_csv(pjoin(DATA_DIR, "clean", "healthy2.csv"), index_col=0)
 
     # Background is made up of healthy cells
-    Y = healthy1.values  # pd.concat([healthy1, healthy2], axis=0).values
+    Y = healthy1.values
+    # Y = pd.concat([healthy1, healthy2], axis=0).values
 
     X = pd.concat([pretransplant2, posttransplant2], axis=0).values
     X_labels = ["Pretransplant2" for _ in range(pretransplant2.shape[0])]
@@ -67,7 +70,8 @@ if __name__ == "__main__":
 
         cpca = CPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = cpca.fit_transform(X, Y)
-        X_reduced = X_reduced[1:3, :]
+        # X_reduced = X_reduced[1:3, :]
+        
 
         try:
             kmeans = KMeans(n_clusters=2, random_state=0).fit(X_reduced.T)
@@ -76,16 +80,13 @@ if __name__ == "__main__":
             break
         cpca_gamma_plot_list.append(gamma)
 
+        X_reduced = X_reduced[2:4, :]
+
         true_labels = pd.factorize(X_df.condition)[0]
         cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
         print("gamma={}, cluster score={}".format(gamma, cluster_score))
         cluster_scores_cpca.append(cluster_score)
 
-        X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-        X_reduced_df["condition"] = X_labels
-        plot_df = X_reduced_df[
-            X_reduced_df.condition.isin(["Pretransplant2", "Posttransplant2"])
-        ]
 
     gamma_range_pcpca = np.linspace(0, 1 - 1e-3, 20)
 
@@ -96,6 +97,7 @@ if __name__ == "__main__":
         pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
         X_reduced = X_reduced[2:4, :]
+        # X_reduced = X_reduced[[1, 3], :]
 
         if pcpca.sigma2_mle <= 0:
             pcpca_fail_gamma = gamma
@@ -108,11 +110,25 @@ if __name__ == "__main__":
         print("gamma={}, cluster score={}".format(gamma, cluster_score))
         cluster_scores_pcpca.append(cluster_score)
 
-        X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
-        X_reduced_df["condition"] = X_labels
-        plot_df = X_reduced_df[
-            X_reduced_df.condition.isin(["Pretransplant2", "Posttransplant2"])
-        ]
+        # X_reduced_df = pd.DataFrame(X_reduced.T, columns=["PCPC1", "PCPC2"])
+        # X_reduced_df["condition"] = X_labels
+        # plot_df = X_reduced_df[
+        #     X_reduced_df.condition.isin(["Pretransplant2", "Posttransplant2"])
+        # ]
+
+    ## Fit CLVM
+    clvm = CLVM(
+        data_dim=X.shape[0],
+        n_bg=m,
+        n_fg=n,
+        latent_dim_shared=5,
+        latent_dim_fg=5,
+    )
+    clvm.init_model()
+    clvm.fit_model(Y, X, n_iters=100000)
+    # clvm.fit_model(Y, X, n_iters=10)
+    tx = clvm.qtx_mean.numpy().T
+    clvm_cluster_score = silhouette_score(X=tx, labels=true_labels)
 
     plt.figure(figsize=(14, 6))
 
@@ -121,18 +137,22 @@ if __name__ == "__main__":
     plt.title("CPCA")
     plt.ylim([0, 1])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
-    plt.axhline(np.max(cluster_scores_cpca), color="red", linestyle="--")
+    plt.axhline(np.max(cluster_scores_cpca), color="red", linestyle="--", label="CPCA")
+    plt.axhline(clvm_cluster_score, color="blue", linestyle="--", label="CLVM")
     plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
+    plt.legend()
 
     plt.subplot(122)
     plt.plot(pcpca_gamma_plot_list, cluster_scores_pcpca, "-o", linewidth=2)
     plt.title("PCPCA")
     plt.ylim([0, 1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
-    plt.axhline(np.max(cluster_scores_pcpca), color="red", linestyle="--")
+    plt.axhline(np.max(cluster_scores_pcpca), color="red", linestyle="--", label="PCPCA")
+    plt.axhline(clvm_cluster_score, color="blue", linestyle="--", label="CLVM")
     plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
+    plt.legend()
     plt.tight_layout()
     plt.savefig("../../../plots/scrnaseq/singlecell_silhouette_score.png")
     plt.show()

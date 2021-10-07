@@ -71,7 +71,7 @@ if __name__ == "__main__":
     best_cluster_scores_cpca = np.empty((n_repeats, len(sigma2_range)))
     best_cluster_scores_pcpca = np.empty((n_repeats, len(sigma2_range)))
 
-    with tqdm(total=n_repeats*len(sigma2_range)) as pbar:
+    with tqdm(total=n_repeats * len(sigma2_range)) as pbar:
         for repeat_ii in range(n_repeats):
             for sigma2_ii, sigma2 in enumerate(sigma2_range):
 

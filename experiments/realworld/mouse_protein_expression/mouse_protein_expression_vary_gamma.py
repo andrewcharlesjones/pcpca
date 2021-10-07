@@ -61,13 +61,21 @@ if __name__ == "__main__":
     matplotlib.rc("font", **font)
     matplotlib.rcParams["text.usetex"] = True
 
-    gamma_range = [0, 0.5, 0.9]
+    gamma_range = [0, 0.5, 0.6]
     plt.figure(figsize=((len(gamma_range)) * 6, 5))
+
+    # print(X[:5, :])
+    # import ipdb; ipdb.set_trace()
 
     for ii, gamma in enumerate(gamma_range):
 
         pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
         X_reduced, Y_reduced = pcpca.fit_transform(X, Y)
+        if pcpca.sigma2_mle < 0:
+            raise ValueError("sigma^2 cannot be negative. PCPCA failed. ")
+            import ipdb
+
+            ipdb.set_trace()
 
         plt.subplot(1, len(gamma_range), ii + 1)
         if gamma == 0:
@@ -101,8 +109,13 @@ if __name__ == "__main__":
             # pd.concat([X_reduced_df, Y_reduced_df], axis=0)
             results_df = X_reduced_df
 
-            sns.scatterplot(data=results_df, x="PCPC1", y="PCPC2",
-                            hue="Genotype", palette=['green', 'orange'])
+            sns.scatterplot(
+                data=results_df,
+                x="PCPC1",
+                y="PCPC2",
+                hue="Genotype",
+                palette=["green", "orange"],
+            )
         plt.xlabel("PCPC1")
         plt.ylabel("PCPC2")
 
@@ -110,14 +123,13 @@ if __name__ == "__main__":
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles=handles[1:], labels=labels[1:])
 
-        
-            # plt.xlabel("PCPC1")
-            # plt.ylabel("PCPC2")
-            # plt.title(r"$\gamma^\prime$={}".format(gamma))
+        # plt.xlabel("PCPC1")
+        # plt.ylabel("PCPC2")
+        # plt.title(r"$\gamma^\prime$={}".format(gamma))
 
-            # ax = plt.gca()
-            # handles, labels = ax.get_legend_handles_labels()
-            # ax.legend(handles=handles[1:], labels=labels[1:])
+        # ax = plt.gca()
+        # handles, labels = ax.get_legend_handles_labels()
+        # ax.legend(handles=handles[1:], labels=labels[1:])
 
     plt.tight_layout()
     plt.savefig("../../../plots/mouse_protein_expression/mouse_pcpca_vary_gamma.png")
