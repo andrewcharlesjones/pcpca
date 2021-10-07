@@ -8,7 +8,13 @@ def test_cpca_failure():
 	Y = multivariate_normal.rvs(np.zeros(2), np.array([[2.7, 2.6], [2.6, 2.7]]), size=200)
 
 	cpca = CPCA(n_components=2, gamma=10000)
-	cpca.fit(X.T, Y.T)
+	try:
+		cpca.fit(X.T, Y.T)
+	except:
+		assert True
+		return
+
+	assert False
 
 
 if __name__ == "__main__":
