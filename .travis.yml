@@ -1,0 +1,19 @@
+language: python
+python:
+  - 3.6
+  - 3.7
+
+notifications:
+  email:
+    recipients:
+      - ajones788@gmail.com
+    on_success: always
+    on_failure: always
+
+install:
+  - pip install -r requirements.txt
+  - python setup.py install
+
+script: 
+  - black .
+  - pytest
