@@ -27,7 +27,7 @@ class CPCA:
         eigvals = eigvals[sorted_idx]
 
         # Stop if eigenvalue at n_components is negative
-        if eigvals[self.k - 1]:
+        if eigvals[self.k - 1] < 0:
             raise Exception("Some of the first n_components eigenvalues are negative. Try lowering gamma or reducing n_components.")
 
         # Truncate to number of components

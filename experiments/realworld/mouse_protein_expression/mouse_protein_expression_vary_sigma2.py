@@ -8,6 +8,7 @@ from sklearn.metrics import adjusted_rand_score, silhouette_score
 from sklearn.decomposition import PCA
 from scipy import stats
 from tqdm import tqdm
+from scipy.stats import t as studentT
 
 DATA_PATH = "../../../data/mouse_protein_expression/clean/Data_Cortex_Nuclear.csv"
 N_COMPONENTS = 2
@@ -59,103 +60,117 @@ if __name__ == "__main__":
     matplotlib.rcParams["text.usetex"] = True
 
     gamma_range_pcpca = list(np.linspace(0, 0.99, 5))
-    gamma_range_cpca = np.linspace(0, 20, 5)
+    gamma_range_cpca = np.linspace(0, 10, 5)
 
     sigma2_range = np.arange(0, 5.5, 0.5)
 
-    n_repeats = 100
+    n_repeats = 50
+    plt.figure(figsize=(14, 5))
 
-    best_gammas_cpca = []
-    best_gammas_pcpca = []
+    for plot_ii, noise_type in enumerate(["N", "t"]):
 
-    best_cluster_scores_cpca = np.empty((n_repeats, len(sigma2_range)))
-    best_cluster_scores_pcpca = np.empty((n_repeats, len(sigma2_range)))
+        best_gammas_cpca = []
+        best_gammas_pcpca = []
 
-    with tqdm(total=n_repeats * len(sigma2_range)) as pbar:
-        for repeat_ii in range(n_repeats):
-            for sigma2_ii, sigma2 in enumerate(sigma2_range):
+        best_cluster_scores_cpca = np.empty((n_repeats, len(sigma2_range)))
+        best_cluster_scores_pcpca = np.empty((n_repeats, len(sigma2_range)))
 
-                # print("Sigma2 = {}".format(sigma2))
+        with tqdm(total=n_repeats * len(sigma2_range)) as pbar:
+            for repeat_ii in range(n_repeats):
+                for sigma2_ii, sigma2 in enumerate(sigma2_range):
 
-                # Add noise
-                curr_X = X + np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, n))
-                curr_Y = Y + np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, m))
+                    # print("Sigma2 = {}".format(sigma2))
 
-                cluster_scores_cpca = []
-                cpca_gamma_plot_list = []
-                for ii, gamma in enumerate(gamma_range_cpca):
+                    # Add noise
+                    if noise_type == "N":
+                        noise_X = np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, n))
+                        noise_Y = np.random.normal(loc=0, scale=np.sqrt(sigma2), size=(p, m))
+                    elif noise_type == "t":
+                        noise_X = studentT.rvs(df=5, loc=0, scale=np.sqrt(sigma2), size=(p, n))
+                        noise_Y = studentT.rvs(df=5, loc=0, scale=np.sqrt(sigma2), size=(p, m))
+                    curr_X = X + noise_X
+                    curr_Y = Y + noise_Y
+                    
 
-                    cpca = CPCA(gamma=gamma, n_components=N_COMPONENTS)
-                    X_reduced, Y_reduced = cpca.fit_transform(curr_X, curr_Y)
+                    cluster_scores_cpca = []
+                    cpca_gamma_plot_list = []
+                    for ii, gamma in enumerate(gamma_range_cpca):
 
-                    try:
+                        cpca = CPCA(gamma=gamma, n_components=N_COMPONENTS)
+                        X_reduced, Y_reduced = cpca.fit_transform(curr_X, curr_Y)
+
+                        try:
+                            kmeans = KMeans(n_clusters=2, random_state=0).fit(X_reduced.T)
+                        except:
+                            cpca_fail_gamma = gamma
+                            break
+                        cpca_gamma_plot_list.append(gamma)
+
+                        true_labels = pd.factorize(X_df.Genotype)[0]
+                        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+                        cluster_scores_cpca.append(cluster_score)
+
+                    best_gamma = np.array(gamma_range_cpca)[
+                        np.argmax(np.array(cluster_scores_cpca))
+                    ]
+                    best_gammas_cpca.append(best_gamma)
+                    best_cluster_scores_cpca[repeat_ii, sigma2_ii] = np.max(
+                        np.array(cluster_scores_cpca)
+                    )
+
+                    cluster_scores_pcpca = []
+                    pcpca_gamma_plot_list = []
+                    for ii, gamma in enumerate(gamma_range_pcpca):
+
+                        pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
+                        X_reduced, Y_reduced = pcpca.fit_transform(curr_X, curr_Y)
+
+                        if pcpca.sigma2_mle <= 0:
+                            pcpca_fail_gamma = gamma
+                            break
+
+                        X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
+                        Y_reduced = (Y_reduced.T / Y_reduced.T.std(0)).T
                         kmeans = KMeans(n_clusters=2, random_state=0).fit(X_reduced.T)
-                    except:
-                        cpca_fail_gamma = gamma
-                        break
-                    cpca_gamma_plot_list.append(gamma)
+                        pcpca_gamma_plot_list.append(gamma)
 
-                    true_labels = pd.factorize(X_df.Genotype)[0]
-                    cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-                    cluster_scores_cpca.append(cluster_score)
+                        true_labels = pd.factorize(X_df.Genotype)[0]
+                        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+                        cluster_scores_pcpca.append(cluster_score)
 
-                best_gamma = np.array(gamma_range_cpca)[
-                    np.argmax(np.array(cluster_scores_cpca))
-                ]
-                best_gammas_cpca.append(best_gamma)
-                best_cluster_scores_cpca[repeat_ii, sigma2_ii] = np.max(
-                    np.array(cluster_scores_cpca)
-                )
+                    best_gamma = np.array(gamma_range_pcpca)[
+                        np.argmax(np.array(cluster_scores_pcpca))
+                    ]
+                    best_gammas_pcpca.append(best_gamma)
+                    best_cluster_scores_pcpca[repeat_ii, sigma2_ii] = np.max(
+                        np.array(cluster_scores_pcpca)
+                    )
 
-                cluster_scores_pcpca = []
-                pcpca_gamma_plot_list = []
-                for ii, gamma in enumerate(gamma_range_pcpca):
+                    pbar.update(1)
 
-                    pcpca = PCPCA(gamma=n / m * gamma, n_components=N_COMPONENTS)
-                    X_reduced, Y_reduced = pcpca.fit_transform(curr_X, curr_Y)
-
-                    if pcpca.sigma2_mle <= 0:
-                        pcpca_fail_gamma = gamma
-                        break
-
-                    X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
-                    Y_reduced = (Y_reduced.T / Y_reduced.T.std(0)).T
-                    kmeans = KMeans(n_clusters=2, random_state=0).fit(X_reduced.T)
-                    pcpca_gamma_plot_list.append(gamma)
-
-                    true_labels = pd.factorize(X_df.Genotype)[0]
-                    cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
-                    cluster_scores_pcpca.append(cluster_score)
-
-                best_gamma = np.array(gamma_range_pcpca)[
-                    np.argmax(np.array(cluster_scores_pcpca))
-                ]
-                best_gammas_pcpca.append(best_gamma)
-                best_cluster_scores_pcpca[repeat_ii, sigma2_ii] = np.max(
-                    np.array(cluster_scores_pcpca)
-                )
-
-                pbar.update(1)
-
-    plt.figure(figsize=(7, 5))
-
-    plt.errorbar(
-        sigma2_range,
-        np.mean(best_cluster_scores_pcpca, axis=0),
-        yerr=mean_confidence_interval(best_cluster_scores_pcpca),
-        fmt="-o",
-        label="PCPCA",
-    )
-    plt.errorbar(
-        sigma2_range,
-        np.mean(best_cluster_scores_cpca, axis=0),
-        yerr=mean_confidence_interval(best_cluster_scores_cpca),
-        fmt="-o",
-        label="CPCA",
-    )
-    plt.legend()
-    plt.xlabel(r"$\sigma^2$")
-    plt.ylabel("Silhouette score")
-    plt.tight_layout()
+        
+        plt.subplot(1, 2, plot_ii + 1)
+        plt.errorbar(
+            sigma2_range,
+            np.mean(best_cluster_scores_pcpca, axis=0),
+            yerr=mean_confidence_interval(best_cluster_scores_pcpca),
+            fmt="-o",
+            label="PCPCA",
+        )
+        plt.errorbar(
+            sigma2_range,
+            np.mean(best_cluster_scores_cpca, axis=0),
+            yerr=mean_confidence_interval(best_cluster_scores_cpca),
+            fmt="-o",
+            label="CPCA",
+        )
+        plt.legend()
+        plt.xlabel(r"$\sigma^2$")
+        plt.ylabel("Silhouette score")
+        if noise_type == "N":
+            plt.title(r"$\epsilon \sim \mathcal{N}(0, \sigma^2)$")
+        else:
+            plt.title(r"$\epsilon \sim \mathcal{T}_5(0, \sigma^2)$")
+        plt.tight_layout()
     plt.savefig("../../../plots/mouse_protein_expression/mouse_vary_sigma2.png")
     plt.show()

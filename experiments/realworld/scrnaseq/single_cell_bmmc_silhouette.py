@@ -14,7 +14,7 @@ sys.path.append("../../../clvm")
 from clvm import CLVM
 
 DATA_DIR = "../../../data/singlecell_bmmc"
-N_COMPONENTS = 25
+N_COMPONENTS = 5
 
 
 if __name__ == "__main__":
@@ -126,9 +126,14 @@ if __name__ == "__main__":
     )
     clvm.init_model()
     clvm.fit_model(Y, X, n_iters=100000)
-    # clvm.fit_model(Y, X, n_iters=10)
     tx = clvm.qtx_mean.numpy().T
-    clvm_cluster_score = silhouette_score(X=tx, labels=true_labels)
+    clvm_cluster_score = 0
+    for ii in range(N_COMPONENTS):
+        for jj in range(ii):
+            curr_ss = silhouette_score(X=tx[:, np.array([ii, jj])], labels=true_labels)
+            if curr_ss > clvm_cluster_score:
+                clvm_cluster_score = curr_ss
+    # clvm_cluster_score = silhouette_score(X=tx, labels=true_labels)
 
     plt.figure(figsize=(14, 6))
 
