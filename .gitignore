@@ -21,7 +21,7 @@ experiments/simulation/pcpca_fellowship_figure.py
 *.mtx
 *.xlsx
 *.zip
-*.png
+# *.png
 *.pdf
 data/mhealth/README.txt
 !data/toy/*.csv
