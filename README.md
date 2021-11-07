@@ -46,7 +46,7 @@ plt.show()
 ```
 
 <p align="center">
-  <img src="./plots/example/toydata.png" width="500">
+  <img src="./example/toydata.png" width="500">
 </p>
 
 Now we'll instantiate and fit the model with maximum likelihood estimation.
@@ -85,7 +85,7 @@ plt.show()
 We can see that W finds the axis that splits the two foreground groups:
 
 <p align="center">
-  <img src="./plots/example/toydata_W.png" width="500">
+  <img src="./example/toydata_W.png" width="500">
 </p>
 
 Once the model is fit, samples can be projected onto the components by calling `transform`:
