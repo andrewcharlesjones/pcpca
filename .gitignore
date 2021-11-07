@@ -7,6 +7,9 @@ cached_models/
 # Paper figures (large)
 figures/
 plots/
+!plots/simulated/
+!plots/simulated/*.png
+!plots/simulated/*.png
 experiments/realworld/*.py
 experiments/simulation/pcpca_fellowship_figure.py
 
@@ -44,5 +47,3 @@ wheels/
 *.egg
 MANIFEST
 
-!plots/simulated/*.png
-!plots/simulated/*.png
