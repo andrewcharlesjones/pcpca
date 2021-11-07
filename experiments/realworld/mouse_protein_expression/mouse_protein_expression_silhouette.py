@@ -7,6 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score
 from sklearn.decomposition import PCA
 import sys
+from scipy.stats import ttest_ind
 
 sys.path.append("../../../clvm")
 from clvm import CLVM
@@ -107,19 +108,19 @@ if __name__ == "__main__":
 
 
     ## Fit CLVM
-    clvm = CLVM(
-        data_dim=X.shape[0],
-        n_bg=m,
-        n_fg=n,
-        latent_dim_shared=N_COMPONENTS,
-        latent_dim_fg=N_COMPONENTS,
-    )
-    clvm.init_model()
-    clvm.fit_model(Y, X, n_iters=10000)
-    zy = clvm.qzy_mean.numpy().T
-    zx = clvm.qzx_mean.numpy().T
-    tx = clvm.qtx_mean.numpy().T
-    clvm_cluster_score = silhouette_score(X=tx, labels=true_labels)
+    # clvm = CLVM(
+    #     data_dim=X.shape[0],
+    #     n_bg=m,
+    #     n_fg=n,
+    #     latent_dim_shared=N_COMPONENTS,
+    #     latent_dim_fg=N_COMPONENTS,
+    # )
+    # clvm.init_model()
+    # clvm.fit_model(Y, X, n_iters=10000)
+    # zy = clvm.qzy_mean.numpy().T
+    # zx = clvm.qzx_mean.numpy().T
+    # tx = clvm.qtx_mean.numpy().T
+    # clvm_cluster_score = silhouette_score(X=tx, labels=true_labels)
 
     plt.figure(figsize=(38, 7))
     plt.subplot(151)
@@ -129,7 +130,7 @@ if __name__ == "__main__":
     plt.xlim([0, cpca_gamma_plot_list[-1] + 40])
     plt.axvline(cpca_fail_gamma, color="black", linestyle="--")
     plt.axhline(np.max(cluster_scores_cpca), color="red", linestyle="--")
-    plt.axhline(clvm_cluster_score, color="blue", linestyle="--", label="CLVM")
+    # plt.axhline(clvm_cluster_score, color="blue", linestyle="--", label="CLVM")
     plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
     plt.legend()
@@ -140,7 +141,7 @@ if __name__ == "__main__":
     plt.xlim([0, pcpca_gamma_plot_list[-1] + 0.1])
     plt.axvline(pcpca_fail_gamma, color="black", linestyle="--")
     plt.axhline(np.max(cluster_scores_pcpca), color="red", linestyle="--")
-    plt.axhline(clvm_cluster_score, color="blue", linestyle="--", label="CLVM")
+    # plt.axhline(clvm_cluster_score, color="blue", linestyle="--", label="CLVM")
     plt.xlabel(r"$\gamma^\prime$")
     plt.ylabel("Silhouette score")
     plt.legend()
@@ -205,36 +206,76 @@ if __name__ == "__main__":
     # ax.legend(handles=handles[1:], labels=labels[1:])
 
     ## Fit CLVM
-    plt.subplot(155)
+    # plt.subplot(155)
     
 
-    zy_df = pd.DataFrame(zy, columns=["CLV1", "CLV2"])
-    zy_df["Genotype"] = ["Background"] * zy_df.shape[0]
-    tx_df = pd.DataFrame(tx, columns=["CLV1", "CLV2"])
-    tx_df["Genotype"] = X_df.Genotype.values
+    # zy_df = pd.DataFrame(zy, columns=["CLV1", "CLV2"])
+    # zy_df["Genotype"] = ["Background"] * zy_df.shape[0]
+    # tx_df = pd.DataFrame(tx, columns=["CLV1", "CLV2"])
+    # tx_df["Genotype"] = X_df.Genotype.values
     
-    clvm_results_df = pd.concat([tx_df, zy_df], axis=0)
-    sns.scatterplot(
-        data=clvm_results_df,
-        x="CLV1",
-        y="CLV2",
-        hue="Genotype",
-        palette=["green", "orange", "gray"],
-    )
-    plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    plt.title("CLVM")
-    ax = plt.gca()
-    handles, labels = ax.get_legend_handles_labels()
-    # ax.legend(handles=handles[1:], labels=labels[1:])
+    # clvm_results_df = pd.concat([tx_df, zy_df], axis=0)
+    # sns.scatterplot(
+    #     data=clvm_results_df,
+    #     x="CLV1",
+    #     y="CLV2",
+    #     hue="Genotype",
+    #     palette=["green", "orange", "gray"],
+    # )
+    # plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+    # plt.title("CLVM")
+    # ax = plt.gca()
+    # handles, labels = ax.get_legend_handles_labels()
 
     plt.tight_layout()
-    plt.savefig("../../../plots/mouse_protein_expression/cluster_score_comparison.png")
+    # plt.savefig("../../../plots/mouse_protein_expression/cluster_score_comparison.png")
 
-    print(np.max(cluster_scores_cpca))
-    print(np.max(cluster_scores_pcpca))
-    print(clvm_cluster_score)
-    plt.show()
+    best_gamma_cpca = np.max(cluster_scores_cpca)
+    best_gamma_pcpca = np.max(cluster_scores_pcpca)
+    print(best_gamma_cpca)
+    print(best_gamma_pcpca)
+    # print(clvm_cluster_score)
+    # plt.show()
+    plt.close()
+
+    ## Do bootstrap test to test significance of differences
+    n_bootstraps = 100
+    cpca_scores_bootstrap = []
+    pcpca_scores_bootstrap = []
+    n_X = X.shape[1]
+    n_Y = Y.shape[1]
+    for _ in range(n_bootstraps):
+        subset_idx_X = np.random.choice(np.arange(n_X), size=int(n_X * 0.8), replace=False)
+        subset_idx_Y = np.random.choice(np.arange(n_Y), size=int(n_Y * 0.8), replace=False)
+
+        ## CPCA
+        cpca = CPCA(gamma=n / m * best_gamma_cpca, n_components=N_COMPONENTS)
+        X_reduced, Y_reduced = cpca.fit_transform(X[:, subset_idx_X], Y[:, subset_idx_Y])
+        X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
+
+        true_labels = pd.factorize(X_df.Genotype)[0][subset_idx_X]
+        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+        cpca_scores_bootstrap.append(cluster_score)
+
+        ## PCPCA
+        pcpca = PCPCA(gamma=n / m * best_gamma_pcpca, n_components=N_COMPONENTS)
+        X_reduced, Y_reduced = pcpca.fit_transform(X[:, subset_idx_X], Y[:, subset_idx_Y])
+        X_reduced = (X_reduced.T / X_reduced.T.std(0)).T
+
+        true_labels = pd.factorize(X_df.Genotype)[0][subset_idx_X]
+        cluster_score = silhouette_score(X=X_reduced.T, labels=true_labels)
+        pcpca_scores_bootstrap.append(cluster_score)
+    print(ttest_ind(pcpca_scores_bootstrap, cpca_scores_bootstrap))
 
     import ipdb
 
     ipdb.set_trace()
+
+
+
+
+
+
+
+
+

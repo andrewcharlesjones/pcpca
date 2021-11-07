@@ -9,6 +9,8 @@ figures/
 plots/
 experiments/realworld/*.py
 experiments/simulation/pcpca_fellowship_figure.py
+!plots/simulated/toydata_W.png
+!plots/simulated/toydata.png
 
 # Data
 *.ipynb
