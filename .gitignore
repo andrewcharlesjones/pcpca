@@ -44,5 +44,5 @@ wheels/
 *.egg
 MANIFEST
 
-!plots/simulated/toydata_W.png
-!plots/simulated/toydata.png
+!plots/simulated/*.png
+!plots/simulated/*.png
